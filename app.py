@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 import flask
 import flask_accept
-if __name__ == '__main__':
-    app.run(port=3333)
 
 
 app = flask.Flask(__name__)
