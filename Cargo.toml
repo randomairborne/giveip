@@ -1,0 +1,12 @@
+[package]
+name = "ip_server"
+authors = ["0/0 <zero@imaskeleton.me>"]
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+hyper = { version = "0.14", features = ["server", "tcp", "http1", "http2"] }
+tokio = { version = "1.12", features = ["full"] }
+futures-util = "0.3"
