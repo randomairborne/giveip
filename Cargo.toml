@@ -1,6 +1,6 @@
 [package]
 name = "ip_server"
-authors = ["0/0 <zero@imaskeleton.me>"]
+authors = ["0/0 <zero@imaskeleton.me>", "valkyrie_pilot <valk@randomairborne.dev>"]
 version = "0.1.0"
 edition = "2021"
 
@@ -10,3 +10,6 @@ edition = "2021"
 hyper = { version = "0.14", features = ["server", "tcp", "http1", "http2"] }
 tokio = { version = "1.12", features = ["full"] }
 futures-util = "0.3"
+
+[profile.release]
+lto = true
