@@ -6,6 +6,7 @@ use std::net::{Ipv6Addr, SocketAddr, SocketAddrV6};
 use std::time::Instant;
 
 async fn handle(addr: SocketAddr, req: Request<Body>) -> Result<Response<Body>, Infallible> {
+    #[cfg(debug_assertions)]
     let st = Instant::now();
 
     let headers = req.headers();
@@ -38,7 +39,9 @@ async fn handle(addr: SocketAddr, req: Request<Body>) -> Result<Response<Body>, 
 
     let r = Ok(Response::new(Body::from(body)));
 
+    #[cfg(debug_assertions)]
     let et = Instant::now();
+    #[cfg(debug_assertions)]
     let tt = et.duration_since(st);
     #[cfg(debug_assertions)]
     println!("{}ns to handle request (pt2)", tt.as_nanos());
@@ -48,6 +51,7 @@ async fn handle(addr: SocketAddr, req: Request<Body>) -> Result<Response<Body>, 
 #[tokio::main]
 async fn main() {
     let make_service = make_service_fn(move |conn: &AddrStream| {
+        #[cfg(debug_assertions)]
         let st = Instant::now();
 
         let addr = conn.remote_addr();
@@ -55,9 +59,12 @@ async fn main() {
         let service = service_fn(move |req| handle(addr, req));
 
         let r = async move { Ok::<_, Infallible>(service) };
-
+        
+        #[cfg(debug_assertions)]
         let et = Instant::now();
+        #[cfg(debug_assertions)]
         let tt = et.duration_since(st);
+        #[cfg(debug_assertions)]
         println!("{}ns to handle request", tt.as_nanos());
         r
     });
