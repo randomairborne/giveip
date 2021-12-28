@@ -9,7 +9,7 @@ async fn handle(addr: SocketAddr, req: Request<Body>) -> Result<Response<Body>, 
     let st = Instant::now();
 
     let headers = req.headers();
-    let pretty_addr = if let Some(ip) = headers.get("CF-Connecting-IP") {
+    let pretty_addr = if let Some(ip) = headers.get("HTTP_X_Real_IP") {
         ip.to_str()
             .expect("invalid ip addr string header set by proxy")
             .to_string()
