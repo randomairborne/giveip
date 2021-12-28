@@ -40,6 +40,7 @@ async fn handle(addr: SocketAddr, req: Request<Body>) -> Result<Response<Body>, 
 
     let et = Instant::now();
     let tt = et.duration_since(st);
+    #[cfg(debug_assertions)]
     println!("{}ns to handle request (pt2)", tt.as_nanos());
     r
 }
