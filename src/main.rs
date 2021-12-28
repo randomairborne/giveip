@@ -3,6 +3,7 @@ use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Request, Response, Server};
 use std::convert::Infallible;
 use std::net::{Ipv6Addr, SocketAddr, SocketAddrV6};
+#[cfg(debug_assertions)]
 use std::time::Instant;
 
 async fn handle(addr: SocketAddr, req: Request<Body>) -> Result<Response<Body>, Infallible> {
