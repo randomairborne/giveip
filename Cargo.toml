@@ -1,14 +1,17 @@
 [package]
-name = "ip_server"
+name = "giveip"
 authors = ["0/0 <zero@imaskeleton.me>", "valkyrie_pilot <valk@randomairborne.dev>"]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/randomairborne/giveip"
+keywords = ["ip-address", "webserver", "docker"]
+categories = ["web-programming::http-server"]
+description = "A simple hyper http server to echo back IP addresses"
 
 [dependencies]
 hyper = { version = "0.14", features = ["server", "tcp", "http1", "http2"] }
-tokio = { version = "1.12", features = ["full"] }
+tokio = { version = "1.12", features = ["rt-multi-thread", "signal", "macros", "net"] }
 futures-util = "0.3"
 
 [profile.release]

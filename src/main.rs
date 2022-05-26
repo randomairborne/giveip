@@ -1,3 +1,4 @@
+#![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
 use hyper::server::conn::AddrStream;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Request, Response, Server};
@@ -6,25 +7,27 @@ use std::net::{Ipv6Addr, SocketAddr, SocketAddrV6};
 #[cfg(debug_assertions)]
 use std::time::Instant;
 
+#[allow(clippy::unused_async)]
 async fn handle(addr: SocketAddr, req: Request<Body>) -> Result<Response<Body>, Infallible> {
     #[cfg(debug_assertions)]
     let st = Instant::now();
 
     let headers = req.headers();
-    let pretty_addr = if let Some(ip) = headers.get("HTTP_X_Real_IP") {
-        ip.to_str()
-            .expect("invalid ip addr string header set by proxy")
-            .to_string()
-    } else {
-        match addr {
+    let pretty_addr = headers.get("X-Real-IP").map_or_else(
+        || match addr {
             SocketAddr::V4(v4) => {
                 format!("{}", v4.ip())
             }
             SocketAddr::V6(v6) => {
                 format!("{}", v6.ip())
             }
-        }
-    };
+        },
+        |ip| {
+            ip.to_str()
+                .expect("invalid ip addr string header set by proxy")
+                .to_string()
+        },
+    );
     let accept = headers
         .get("Accept")
         .map_or("*/*", |x| x.to_str().expect("invalid header value"));
@@ -60,7 +63,7 @@ async fn main() {
         let service = service_fn(move |req| handle(addr, req));
 
         let r = async move { Ok::<_, Infallible>(service) };
-        
+
         #[cfg(debug_assertions)]
         let et = Instant::now();
         #[cfg(debug_assertions)]
@@ -96,8 +99,7 @@ async fn main() {
     println!("Listening on http://{} and http://{}", addr, addr_v6);
 
     let err = match futures_util::future::join(server, server_v6).await {
-        (Err(e), _) => Some(e),
-        (_, Err(e)) => Some(e),
+        (Err(e), _) | (_, Err(e)) => Some(e),
         _ => None,
     };
     if let Some(e) = err {
