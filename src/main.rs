@@ -34,7 +34,7 @@ async fn handle(addr: SocketAddr, req: Request<Body>) -> Result<Response<Body>, 
     let body = match accept.find("text/html") {
         Some(_) => {
             format!(
-                r#"<title>Your IP is {0}</title><h1 style="font-size: 32px;font-size: 3vw;height: 100%;width: 100%;display: flex;position: fixed;align-items: center;justify-content: center;">    Your public IP is {0}    </h1>"#,
+                r#"<html><head><title>Your IP is {0}</title></head><body><h1 style="font-size: 32px;font-size: 3vw;height: 100%;width: 100%;display: flex;position: fixed;align-items: center;justify-content: center;">Your public IP is {0}</h1><html>"#,
                 pretty_addr
             )
         }
