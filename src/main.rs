@@ -73,13 +73,7 @@ async fn main() {
         r
     });
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    let addr_v6 = SocketAddr::from(SocketAddrV6::new(
-        Ipv6Addr::from([0, 0, 0, 0, 0, 0, 0, 1]),
-        3000,
-        0,
-        0,
-    ));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
 
     let server = Server::bind(&addr)
         .serve(make_service)
@@ -88,21 +82,10 @@ async fn main() {
                 .await
                 .expect("failed to listen for ctrl+c");
         });
-    let server_v6 = Server::bind(&addr_v6)
-        .serve(make_service)
-        .with_graceful_shutdown(async {
-            tokio::signal::ctrl_c()
-                .await
-                .expect("failed to listen for ctrl+c");
-        });
 
-    println!("Listening on http://{} and http://{}", addr, addr_v6);
+    println!("Listening on http://{}", addr);
 
-    let err = match futures_util::future::join(server, server_v6).await {
-        (Err(e), _) | (_, Err(e)) => Some(e),
-        _ => None,
-    };
-    if let Some(e) = err {
+    if let Err(e) = server.await {
         eprintln!("server error: {}", e);
     }
 }
