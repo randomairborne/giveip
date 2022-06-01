@@ -11,8 +11,7 @@ description = "A simple hyper http server to echo back IP addresses"
 
 [dependencies]
 hyper = { version = "0.14", features = ["server", "tcp", "http1", "http2"] }
-tokio = { version = "1.12", features = ["rt-multi-thread", "signal", "macros", "net"] }
-futures-util = "0.3"
+tokio = { version = "1.18", features = ["rt-multi-thread", "signal", "macros", "net"] }
 
 [profile.release]
 lto = true
