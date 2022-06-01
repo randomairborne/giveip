@@ -6,6 +6,8 @@ services:
     networks:
       - default
       - ingress_default
+    ports:
+      - "8083:8080"
     deploy:
       placement:
         constraints:
@@ -15,7 +17,7 @@ services:
         - "traefik.http.routers.giveip.rule=\"Host(`giveip.io`) || Host(`www.giveip.io`) || Host(`v4.giveip.io`) || Host(`v6.giveip.io`) \""
         - "traefik.http.routers.giveip.entrypoints=https"
         - "traefik.http.routers.giveip.tls.certresolver=letsencrypt"
-        - "traefik.http.services.giveip.loadbalancer.server.port=8080"
+        - "traefik.http.services.giveip.loadbalancer.server.port=8083"
 
 networks:
   ingress_default:
