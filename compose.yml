@@ -1,0 +1,22 @@
+version: "3.4"
+services:
+  updatejson:
+    image: ghcr.io/randomairborne/giveip
+    restart: always
+    networks:
+      - default
+      - ingress_default
+    deploy:
+      placement:
+        constraints:
+          - "node.role==manager"
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.giveip.rule=Host(`${HOST}`)"
+        - "traefik.http.routers.giveip.entrypoints=websecure"
+        - "traefik.http.routers.giveip.tls.certresolver=myresolver"
+        - "traefik.http.services.giveip.loadbalancer.server.port=8080"
+
+networks:
+  ingress_default:
+    external: true

@@ -28,27 +28,26 @@ async fn handle(addr: SocketAddr, req: Request<Body>) -> Result<Response<Body>, 
                 .to_string()
         },
     );
+    if req.uri() == "/raw" {
+        return Ok(Response::new(Body::from(pretty_addr)));
+    }
     let accept = headers
         .get("Accept")
         .map_or("*/*", |x| x.to_str().expect("invalid header value"));
     let body = match accept.find("text/html") {
         Some(_) => {
-            format!(
-                r#"<html><head><title>Your IP is {0}</title></head><body><h1 style="font-size: 32px;font-size: 3vw;height: 100%;width: 100%;display: flex;position: fixed;align-items: center;justify-content: center;">Your public IP is {0}</h1><html>"#,
-                pretty_addr
-            )
+            include_str!("index.html").to_string()
         }
         None => format!("{}\n", pretty_addr),
     };
 
     let r = Ok(Response::new(Body::from(body)));
-
     #[cfg(debug_assertions)]
-    let et = Instant::now();
-    #[cfg(debug_assertions)]
-    let tt = et.duration_since(st);
-    #[cfg(debug_assertions)]
-    println!("{}ns to handle request (pt2)", tt.as_nanos());
+    {
+        let et = Instant::now();
+        let tt = et.duration_since(st);
+        println!("{}ns to handle request (pt2)", tt.as_nanos());
+    }
     r
 }
 
@@ -65,15 +64,15 @@ async fn main() {
         let r = async move { Ok::<_, Infallible>(service) };
 
         #[cfg(debug_assertions)]
-        let et = Instant::now();
-        #[cfg(debug_assertions)]
-        let tt = et.duration_since(st);
-        #[cfg(debug_assertions)]
-        println!("{}ns to handle request", tt.as_nanos());
+        {
+            let et = Instant::now();
+            let tt = et.duration_since(st);
+            println!("{}ns to handle request", tt.as_nanos());
+        }
         r
     });
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
 
     let server = Server::bind(&addr)
         .serve(make_service)
