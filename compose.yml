@@ -4,7 +4,6 @@ services:
     image: ghcr.io/randomairborne/giveip
     restart: always
     networks:
-      - default
       - ingress_default
     ports:
       - "8083:8080"
