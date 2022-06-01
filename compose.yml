@@ -12,9 +12,9 @@ services:
           - "node.role==manager"
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.giveip.rule=Host(`${HOST}`)"
+        - "traefik.http.routers.giveip.rule=\"Host(`giveip.io`) || Host(`www.giveip.io`) || Host(`v4.giveip.io`) || Host(`v6.giveip.io`) \""
         - "traefik.http.routers.giveip.entrypoints=websecure"
-        - "traefik.http.routers.giveip.tls.certresolver=myresolver"
+        - "traefik.http.routers.giveip.tls.certresolver=resolver"
         - "traefik.http.services.giveip.loadbalancer.server.port=8080"
 
 networks:

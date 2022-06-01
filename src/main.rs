@@ -13,7 +13,7 @@ async fn handle(addr: SocketAddr, req: Request<Body>) -> Result<Response<Body>, 
     let st = Instant::now();
 
     let headers = req.headers();
-    let pretty_addr = headers.get("X-Real-IP").map_or_else(
+    let pretty_addr = headers.get("X-Forwarded-For").map_or_else(
         || match addr {
             SocketAddr::V4(v4) => {
                 format!("{}", v4.ip())
