@@ -17,6 +17,7 @@ services:
         - traefik.http.routers.giveip.entrypoints=https
         - traefik.http.routers.giveip.tls.certresolver=letsencrypt
         - traefik.http.services.giveip.loadbalancer.server.port=8083
+        - traefik.http.services.giveip.loadbalancer.server.scheme=https
 
 networks:
   ingress_default:
