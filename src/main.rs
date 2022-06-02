@@ -24,20 +24,29 @@ async fn handle(addr: SocketAddr, req: Request<Body>) -> Result<Response<Body>, 
         },
         |ip| {
             ip.to_str()
-                .expect("invalid ip addr string header set by proxy")
+                .unwrap_or("invalid ip address string header set by proxy")
                 .to_string()
         },
     );
-    if req.uri() == "/raw" {
+    let origin = match req.headers().get("Origin") {
+        Some(origin) => origin.clone(),
+        None => hyper::header::HeaderValue::from_static("")
+    };
+    if origin != "https://www.giveip.io" && origin != "https://giveip.io" {
         return Ok(Response::new(Body::from(pretty_addr)));
+    }
+    if req.uri() == "/raw" {
+        let resp = Response::builder()
+            .header("Access-Control-Allow-Origin", origin)
+            .body(Body::from(pretty_addr.clone()))
+            .unwrap_or_else(|_| Response::new(Body::from(pretty_addr)));
+        return Ok(resp);
     }
     let accept = headers
         .get("Accept")
         .map_or("*/*", |x| x.to_str().expect("invalid header value"));
     let body = match accept.find("text/html") {
-        Some(_) => {
-            include_str!("index.html").to_string()
-        }
+        Some(_) => include_str!("index.html").to_string(),
         None => format!("{}\n", pretty_addr),
     };
 
