@@ -7,6 +7,8 @@ services:
       - proxy
     ports:
       - "8083:8080"
+    expose:
+      - "8080"
     deploy:
       labels:
         - traefik.enable=true
@@ -14,7 +16,6 @@ services:
         - traefik.http.routers.giveip.entrypoints=https
         - traefik.http.routers.giveip.tls.certresolver=letsencrypt
         - traefik.http.services.giveip.loadbalancer.server.port=8083
-        - traefik.http.services.giveip.loadbalancer.server.scheme=https
 
 networks:
   proxy:
