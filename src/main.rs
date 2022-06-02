@@ -28,19 +28,8 @@ async fn handle(addr: SocketAddr, req: Request<Body>) -> Result<Response<Body>, 
                 .to_string()
         },
     );
-    let origin = match req.headers().get("Origin") {
-        Some(origin) => origin.clone(),
-        None => hyper::header::HeaderValue::from_static("")
-    };
-    if origin != "https://www.giveip.io" && origin != "https://giveip.io" {
-        return Ok(Response::new(Body::from(pretty_addr)));
-    }
     if req.uri() == "/raw" {
-        let resp = Response::builder()
-            .header("Access-Control-Allow-Origin", origin)
-            .body(Body::from(pretty_addr.clone()))
-            .unwrap_or_else(|_| Response::new(Body::from(pretty_addr)));
-        return Ok(resp);
+        return Ok(Response::new(Body::from(pretty_addr)));
     }
     let accept = headers
         .get("Accept")
