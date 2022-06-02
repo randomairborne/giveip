@@ -31,9 +31,10 @@ async fn handle(addr: SocketAddr, req: Request<Body>) -> Result<Response<Body>, 
     if req.uri() == "/raw" {
         return Ok(Response::new(Body::from(pretty_addr)));
     }
+    eprintln!("{:?}", &headers);
     let accept = headers
         .get("Accept")
-        .map_or("*/*", |x| x.to_str().expect("invalid header value"));
+        .map_or("*/*", |x| x.to_str().unwrap_or("invalid header value"));
     let body = match accept.find("text/html") {
         Some(_) => include_str!("index.html").to_string(),
         None => format!("{}\n", pretty_addr),
