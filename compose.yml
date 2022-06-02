@@ -8,9 +8,6 @@ services:
     ports:
       - "8083:8080"
     deploy:
-      placement:
-        constraints:
-          - "node.role==manager"
       labels:
         - traefik.enable=true
         - traefik.http.routers.giveip.rule=Host(`giveip.io`) || Host(`www.giveip.io`) || Host(`v4.giveip.io`) || Host(`v6.giveip.io`)
