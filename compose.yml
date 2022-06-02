@@ -4,7 +4,7 @@ services:
     image: ghcr.io/randomairborne/giveip
     restart: always
     networks:
-      - ingress_default
+      - proxy
     ports:
       - "8083:8080"
     deploy:
@@ -20,5 +20,5 @@ services:
         - traefik.http.services.giveip.loadbalancer.server.scheme=https
 
 networks:
-  ingress_default:
+  proxy:
     external: true
