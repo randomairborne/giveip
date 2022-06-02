@@ -10,6 +10,6 @@ FROM alpine
 
 COPY --from=builder /build/target/release/giveip /usr/bin/giveip
 
-EXPOSE 3000
+EXPOSE 8080
 
 CMD [ "/usr/bin/giveip" ]
