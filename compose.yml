@@ -11,13 +11,12 @@ services:
       - "8080"
     deploy:
       labels:
-        - traefik.enable=true
-        - traefik.http.routers.giveip.rule=Host(`giveip.io`) || Host(`www.giveip.io`) || Host(`v4.giveip.io`) || Host(`v6.giveip.io`)
-        - traefik.http.routers.giveip.entrypoints=https
-        - traefik.http.routers.giveip.tls.certresolver=letsencrypt
-        - traefik.http.services.giveip.loadbalancer.server.port=8080
-        - traefik.http.middlewares.giveip.redirectscheme.scheme=https
-        - traefik.http.middlewares.giveip.headers.accessControlAllowOriginList=[https://giveip.io,https://www.giveip.io]
+        - traefik.enable: true
+        - traefik.http.routers.giveip.rule: Host(`giveip.io`) || Host(`www.giveip.io`) || Host(`v4.giveip.io`) || Host(`v6.giveip.io`)
+        - traefik.http.routers.giveip.entrypoints: https,http
+        - traefik.http.routers.giveip.tls.certresolver: letsencrypt
+        - traefik.http.services.giveip.loadbalancer.server.port: 8080
+        - traefik.http.middlewares.giveip.headers.accessControlAllowOriginList: [https://giveip.io,https://www.giveip.io]
 
 networks:
   proxy:
