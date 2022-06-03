@@ -14,8 +14,8 @@ services:
         - traefik.http.routers.giveip.entrypoints=https,http
         - traefik.http.routers.giveip.tls.certresolver=letsencrypt
         - traefik.http.services.giveip.loadbalancer.server.port=8080
-        - traefik.http.middlewares.giveip.headers.accesscontrolalloworiginlist=https://giveip.io,https://www.giveip.io
-        - traefik.http.middlewares.giveip.headers.accesscontrolallowmethods=GET,POST,HEAD,PUT,DELETE,PATCH,OPTIONS
+        - traefik.http.middlewares.giveip-mw.headers.accesscontrolalloworiginlist=https://giveip.io,https://www.giveip.io
+        - traefik.http.routers.giveip.middlewares=giveip-mw
 
 networks:
   proxy:
