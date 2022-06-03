@@ -28,8 +28,8 @@
 <body onload="onLoad()">
     <h1>
         <div class="stack">
-            <div id="ip4txt">Your public IPv4 is:&nbsp;<code id="ip4">(none)</code></div>
-            <div id="ip6txt">Your public IPv6 is:&nbsp;<code id="ip6">(none)</code></div>
+            <div id="ip4txt" style="display: none;">Your public IPv4 is:&nbsp;<code id="ip4">(none)</code></div>
+            <div id="ip6txt" style="display: none;">Your public IPv6 is:&nbsp;<code id="ip6">(none)</code></div>
         </div>
     </h1>
     <script>
@@ -38,10 +38,12 @@
             const ip6 = document.getElementById("ip6");
             const ip4txt = document.getElementById("ip4txt");
             const ip6txt = document.getElementById("ip6txt");
-            let v4 = await fetch("https://v4.giveip.io/raw").then(req => req.text().catch(failed => { console.log("Request failed:" + failed); ip4txt.style.display = "none" }));
+            let v4 = await fetch("https://v4.giveip.io/raw").then(req => req.text().catch(failed => { console.log("Request failed:" + failed);}));
             ip4.innerText = v4;
+            ip4txt.style.display = null;
             document.getElementById("title").innerText = `Your IP is ${v4}`;
-            let v6 = await fetch("https://v6.giveip.io/raw").then(req => req.text()).catch(failed => { console.log("Request failed:" + failed); ip6txt.style.display = "none" });
+            let v6 = await fetch("https://v6.giveip.io/raw").then(req => req.text()).catch(failed => { console.log("Request failed:" + failed);});
+            ip6txt.style.display = null;
             ip6.innerText = v6;
         }
     </script>
