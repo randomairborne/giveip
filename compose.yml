@@ -17,7 +17,7 @@ services:
         traefik.http.middlewares.giveip-mw.headers.accesscontrolalloworiginlist: https://giveip.io,https://www.giveip.io
         traefik.http.routers.giveip.middlewares: giveip-mw
         traefik.http.routers.giveip-plaintext.rule: Host(`giveip.io`) || Host(`www.giveip.io`) || Host(`v4.giveip.io`) || Host(`v6.giveip.io`)
-        traefik.http.routers.giveip-plaintext.entrypoints: https
+        traefik.http.routers.giveip-plaintext.entrypoints: http
         traefik.http.services.giveip-plaintext.loadbalancer.server.port: 8080
         
         
