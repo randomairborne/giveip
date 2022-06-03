@@ -1,20 +1,46 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title id="title">What's my IP?</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro&display=swap" rel="stylesheet">
+    <style>
+        h1 {
+            font-size: 32px;
+            font-size: 3vw;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            position: fixed;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Source Sans Pro', sans-serif;
+        }
+
+        .stack {
+            display: inline;
+        }
+    </style>
 </head>
 
 <body onload="onLoad()">
-    <h1
-        style="font-size: 32px;font-size: 3vw;height: 100%;width: 100%;display: flex;position: fixed;align-items: center;justify-content: center;">
-        Your IPv4 is: <div id="ip4">(none)</div><br>Your IPv6 is: <div id="ip6">(none)</div></h1>
+    <h1>
+        <div class="stack">
+            <div>Your public IPv4 is:&nbsp;<code id="ip4">(none)</code></div>
+            <div>Your public IPv6 is:&nbsp;<code id="ip6">(none)</code></div>
+        </div>
+    </h1>
     <script>
         async function onLoad() {
-            let v4 = await fetch("https://v4.giveip.io/raw").then(req => req.text());
-            document.getElementById("ip4").innerText = v4;
+            const ip4 = document.getElementById("ip4");
+            const ip6 = document.getElementById("ip6");
+            let v4 = await fetch("https://v4.giveip.io/raw").then(req => req.text().catch(failed => { console.log("Request failed:" + failed); ip4.style.display = "none" }));
+            ip4.innerText = v4;
             document.getElementById("title").innerText = `Your IP is ${v4}`;
-            let v6 = await fetch("https://v6.giveip.io/raw").then(req => req.text()).catch(failed => console.log("Request failed:" + failed));
-            document.getElementById("ip6").innerText = v6;
+            let v6 = await fetch("https://v6.giveip.io/raw").then(req => req.text()).catch(failed => { console.log("Request failed:" + failed); ip6.style.display = "none" });
+            ip6.innerText = v6;
         }
     </script>
 
