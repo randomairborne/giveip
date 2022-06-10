@@ -46,8 +46,8 @@
             document.getElementById("title").innerText = `Your IP is ${v4}`;
             let v6 = await fetch("v6.giveip.io/raw").then(req => req.text()).catch(failed => { console.log("Request failed:" + failed) });
             if (v6 !== undefined) {
-                ip6txt.style.display = null;
                 ip6.innerText = v6;
+                ip6txt.style.display = null;
             }
         }
     </script>
