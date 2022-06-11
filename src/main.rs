@@ -13,10 +13,21 @@ async fn handle(addr: SocketAddr, req: Request<Body>) -> Result<Response<Body>, 
     let st = Instant::now();
 
     let headers = req.headers();
-    let pretty_addr = match headers.get("X-Real-IP").to_str() {
-        Ok(head) => head.to_string(),
-        Err(e) => 
-    }
+    let pretty_addr = headers.get("X-Real-IP").map_or_else(
+        || match addr {
+            SocketAddr::V4(v4) => {
+                format!("{}", v4.ip())
+            }
+            SocketAddr::V6(v6) => {
+                format!("{}", v6.ip())
+            }
+        },
+        |ip| {
+            ip.to_str()
+                .unwrap_or("invalid ip address string header set by proxy")
+                .to_string()
+        },
+    );
     if req.uri() == "/raw" {
         return Ok(Response::new(Body::from(pretty_addr)));
     }
