@@ -59,7 +59,7 @@ async fn main() {
         r
     });
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
+    let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 8080));
 
     let server = Server::bind(&addr)
         .serve(make_service)
