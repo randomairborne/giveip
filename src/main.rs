@@ -42,7 +42,7 @@ async fn handle(req: Request<Body>) -> Result<Response<Body>, Infallible> {
 
 #[tokio::main]
 async fn main() {
-    let make_service = make_service_fn(move || {
+    let make_service = make_service_fn(move |_| {
         #[cfg(debug_assertions)]
         let st = Instant::now();
 
