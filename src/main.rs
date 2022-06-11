@@ -1,14 +1,12 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
-use hyper::server::conn::AddrStream;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Request, Response, Server};
 use std::convert::Infallible;
-use std::net::SocketAddr;
 #[cfg(debug_assertions)]
 use std::time::Instant;
 
 #[allow(clippy::unused_async)]
-async fn handle(addr: SocketAddr, req: Request<Body>) -> Result<Response<Body>, Infallible> {
+async fn handle(req: Request<Body>) -> Result<Response<Body>, Infallible> {
     #[cfg(debug_assertions)]
     let st = Instant::now();
 
@@ -17,7 +15,7 @@ async fn handle(addr: SocketAddr, req: Request<Body>) -> Result<Response<Body>, 
         || "(failed to get)".to_string(),
         |ip| {
             ip.to_str()
-                .unwrap_or("invalid ip address string header set by proxy")
+                .unwrap_or("(invalid ip address string header set by proxy)")
                 .to_string()
         },
     );
@@ -44,13 +42,11 @@ async fn handle(addr: SocketAddr, req: Request<Body>) -> Result<Response<Body>, 
 
 #[tokio::main]
 async fn main() {
-    let make_service = make_service_fn(move |conn: &AddrStream| {
+    let make_service = make_service_fn(move || {
         #[cfg(debug_assertions)]
         let st = Instant::now();
 
-        let addr = conn.remote_addr();
-
-        let service = service_fn(move |req| handle(addr, req));
+        let service = service_fn(move |req| handle(req));
 
         let r = async move { Ok::<_, Infallible>(service) };
 
