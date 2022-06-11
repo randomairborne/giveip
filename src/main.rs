@@ -14,14 +14,7 @@ async fn handle(addr: SocketAddr, req: Request<Body>) -> Result<Response<Body>, 
 
     let headers = req.headers();
     let pretty_addr = headers.get("X-Real-IP").map_or_else(
-        || match addr {
-            SocketAddr::V4(v4) => {
-                format!("{}", v4.ip())
-            }
-            SocketAddr::V6(v6) => {
-                format!("{}", v6.ip())
-            }
-        },
+        || "(failed to get)".to_string(),
         |ip| {
             ip.to_str()
                 .unwrap_or("invalid ip address string header set by proxy")
