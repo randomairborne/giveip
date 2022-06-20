@@ -39,14 +39,14 @@
             const ip4txt = document.getElementById("ip4txt");
             const ip6txt = document.getElementById("ip6txt");
             let didSucceed = false;
-            let v4 = await fetch(window.location.protocol + "://v4.giveip.io/raw").then(req => req.text().catch(failed => { console.log("Request failed:" + failed) }));
+            let v4 = await fetch("https://v4.giveip.io/raw").then(req => req.text().catch(failed => { console.log("Request failed:" + failed) }));
             if (v4 !== undefined) {
                 ip4.innerText = v4;
                 ip4txt.style.display = null;
                 didSucceed = true;
             }
             document.getElementById("title").innerText = `Your IP is ${v4}`;
-            let v6 = await fetch(window.location.protocol + "://v6.giveip.io/raw").then(req => req.text()).catch(failed => { console.log("Request failed:" + failed) });
+            let v6 = await fetch("https://v6.giveip.io/raw").then(req => req.text()).catch(failed => { console.log("Request failed:" + failed) });
             if (v6 !== undefined) {
                 ip6.innerText = v6;
                 ip6txt.style.display = null;
