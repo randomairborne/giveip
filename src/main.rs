@@ -21,13 +21,16 @@ async fn handle(req: Request<Body>) -> Result<Response<Body>, Infallible> {
     );
     if req.uri() == "/raw" {
         return Ok(Response::new(Body::from(pretty_addr)));
+    } else if req.uri() == "/jb.woff2" {
+        return Ok(Response::new(Body::from(include_bytes!("jb.woff2").to_vec())))
     }
     let accept = headers
         .get("Accept")
         .map_or("*/*", |x| x.to_str().unwrap_or("invalid header value"));
-    let body = match accept.find("text/html") {
-        Some(_) => include_str!("index.html").to_string(),
-        None => format!("{}\n", pretty_addr),
+    let body = if accept.contains("text/html") {
+        include_str!("index.html").to_string()
+    } else {
+        format!("{}\n", pretty_addr)
     };
 
     let r = Ok(Response::new(Body::from(body)));
