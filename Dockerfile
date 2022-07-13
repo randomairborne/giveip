@@ -1,12 +1,12 @@
-FROM rust AS builder
+FROM rust:alpine AS builder
 
 WORKDIR /build
 COPY . .
 
-RUN apt install openssl-dev
+RUN apk add musl-dev
 RUN cargo build --release
 
-FROM debian:slim
+FROM alpine
 
 COPY --from=builder /build/target/release/giveip /usr/bin/giveip
 
