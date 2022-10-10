@@ -4,11 +4,6 @@
 <head>
     <title id="title">What's my IP?</title>
     <style>
-        @font-face {
-            font-family: 'Source Sans Pro';
-            src: url(/jb.woff2);
-        }
-
         h1 {
             font-size: 32px;
             font-size: 3vw;
@@ -18,13 +13,16 @@
             position: fixed;
             align-items: center;
             justify-content: center;
-            font-family: 'Source Sans Pro', sans-serif;
+            font-family: 'Helvetica', sans-serif;
         }
 
         .stack {
             display: inline;
         }
     </style>
+    <noscript>
+         <meta http-equiv="refresh" content="5; URL=/raw">
+    </noscript>
 </head>
 
 <body onload="onLoad()">
@@ -55,7 +53,7 @@
                 didSucceed = true;
             }
             if (!didSucceed) {
-                ip6txt.innerHTML = "Failed to get any IP! Please report this to <a href=\"mailto:valk@randomairborne.dev\">valkyrie_pilot</a>"
+                window.location.href = "https://giveip.io/raw";
             }
         }
     </script>

@@ -2,27 +2,20 @@
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Request, Response, Server};
 use std::convert::Infallible;
-#[cfg(debug_assertions)]
-use std::time::Instant;
 
 #[allow(clippy::unused_async)]
 async fn handle(req: Request<Body>) -> Result<Response<Body>, Infallible> {
-    #[cfg(debug_assertions)]
-    let st = Instant::now();
-
     let headers = req.headers();
-    let pretty_addr = headers.get("X-Real-IP").map_or_else(
-        || "(failed to get)".to_string(),
+    let addr = headers.get("X-Real-IP").map_or_else(
+        || "(failed to get)",
         |ip| {
             ip.to_str()
                 .unwrap_or("(invalid ip address string header set by proxy)")
-                .to_string()
         },
     );
+    let pretty_addr = format!("{}\n", addr);
     if req.uri() == "/raw" {
         return Ok(Response::new(Body::from(pretty_addr)));
-    } else if req.uri() == "/jb.woff2" {
-        return Ok(Response::new(Body::from(include_bytes!("jb.woff2").to_vec())))
     }
     let accept = headers
         .get("Accept")
@@ -33,33 +26,14 @@ async fn handle(req: Request<Body>) -> Result<Response<Body>, Infallible> {
         format!("{}\n", pretty_addr)
     };
 
-    let r = Ok(Response::new(Body::from(body)));
-    #[cfg(debug_assertions)]
-    {
-        let et = Instant::now();
-        let tt = et.duration_since(st);
-        println!("{}ns to handle request (pt2)", tt.as_nanos());
-    }
-    r
+    Ok(Response::new(Body::from(body)))
 }
 
 #[tokio::main]
 async fn main() {
     let make_service = make_service_fn(move |_| {
-        #[cfg(debug_assertions)]
-        let st = Instant::now();
-
         let service = service_fn(move |req| handle(req));
-
-        let r = async move { Ok::<_, Infallible>(service) };
-
-        #[cfg(debug_assertions)]
-        {
-            let et = Instant::now();
-            let tt = et.duration_since(st);
-            println!("{}ns to handle request", tt.as_nanos());
-        }
-        r
+        async move { Ok::<_, Infallible>(service) }
     });
 
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 8080));
