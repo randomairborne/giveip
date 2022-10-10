@@ -3,7 +3,5 @@ services:
   giveip:
     image: ghcr.io/randomairborne/giveip
     restart: always
-    networks:
-      - proxy
     ports:
       - "8080:8080"
