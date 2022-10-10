@@ -7,19 +7,3 @@ services:
       - proxy
     ports:
       - "8080:8080"
-    deploy:
-      labels:
-        traefik.enable: "true"
-        traefik.http.routers.giveips.rule: Host(`giveip.io`) || Host(`www.giveip.io`) || Host(`v4.giveip.io`) || Host(`v6.giveip.io`) || Host(`ip.mcfix.org`)
-        traefik.http.routers.giveips.entrypoints: https
-        traefik.http.routers.giveips.tls.certresolver: letsencrypt
-        traefik.http.routers.giveip.rule: Host(`giveip.io`) || Host(`www.giveip.io`) || Host(`v4.giveip.io`) || Host(`v6.giveip.io`) || Host(`ip.mcfix.org`)
-        traefik.http.routers.giveip.entrypoints: http
-        traefik.http.middlewares.giveip-mw.headers.accesscontrolalloworiginlist: https://giveip.io,https://www.giveip.io
-        traefik.http.routers.giveips.middlewares: giveip-mw
-        traefik.http.routers.giveip.middlewares: giveip-mw
-        traefik.http.services.giveip.loadbalancer.server.port: 8080
-
-networks:
-  proxy:
-    external: true
