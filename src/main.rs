@@ -14,9 +14,11 @@ async fn handle(req: Request<Body>) -> Result<Response<Body>, Infallible> {
         },
     );
     let pretty_addr = format!("{}\n", addr);
-    if req.uri() == "/raw" {
-        return Ok(Response::new(Body::from(pretty_addr)));
-    }
+    match req.uri().path() {
+        "/raw" => return Ok(Response::new(Body::from(pretty_addr))),
+        "/robots.txt" => return Ok(Response::new(Body::from("User-Agent: *\nAllow: /"))),
+        _ => {}
+    } 
     let accept = headers
         .get("Accept")
         .map_or("*/*", |x| x.to_str().unwrap_or("invalid header value"));
@@ -32,7 +34,7 @@ async fn handle(req: Request<Body>) -> Result<Response<Body>, Infallible> {
 #[tokio::main]
 async fn main() {
     let make_service = make_service_fn(move |_| {
-        let service = service_fn(move |req| handle(req));
+        let service = service_fn(handle);
         async move { Ok::<_, Infallible>(service) }
     });
 
