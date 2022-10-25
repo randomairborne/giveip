@@ -18,7 +18,7 @@ async fn handle(req: Request<Body>) -> Result<Response<Body>, Infallible> {
         "/raw" => return Ok(Response::new(Body::from(pretty_addr))),
         "/robots.txt" => return Ok(Response::new(Body::from("User-Agent: *\nAllow: /"))),
         _ => {}
-    } 
+    }
     let accept = headers
         .get("Accept")
         .map_or("*/*", |x| x.to_str().unwrap_or("invalid header value"));
@@ -38,7 +38,13 @@ async fn main() {
         async move { Ok::<_, Infallible>(service) }
     });
 
-    let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 8080));
+    let addr = std::net::SocketAddr::from((
+        [0, 0, 0, 0],
+        std::env::var("PORT")
+            .unwrap_or_else(|| "8080".to_string())
+            .parse::<u16>()
+            .unwrap_or(8080),
+    ));
 
     let server = Server::bind(&addr)
         .serve(make_service)

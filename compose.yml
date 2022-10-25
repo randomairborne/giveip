@@ -4,4 +4,4 @@ services:
     image: ghcr.io/randomairborne/giveip
     restart: always
     ports:
-      - "8080:8080"
+      - "9002:8080"
