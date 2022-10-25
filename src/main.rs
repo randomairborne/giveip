@@ -41,7 +41,7 @@ async fn main() {
     let addr = std::net::SocketAddr::from((
         [0, 0, 0, 0],
         std::env::var("PORT")
-            .unwrap_or_else(|| "8080".to_string())
+            .unwrap_or_else(|_| 8080.to_string())
             .parse::<u16>()
             .unwrap_or(8080),
     ));
