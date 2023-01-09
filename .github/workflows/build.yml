@@ -6,7 +6,10 @@ on:
   workflow_dispatch:
 
 jobs:
+  check:
+    uses: ./.github/workflows/check.yml
   build:
+    needs: [check]
     runs-on: ubuntu-latest
     steps:
       - name: Correct env
