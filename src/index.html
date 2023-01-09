@@ -3,13 +3,13 @@
 
 <head>
     <title id="title">What's my IP?</title>
-    <link href="/jb.css" rel="stylesheet">
+    <noscript>
+        <meta http-equiv="refresh" content="0; url='/raw'" />
+    </noscript>
+    <meta property="og:title" content="GiveIP" />
+    <meta property="og:url" content="https://giveip.io/" />
+    <meta property="og:description" content="A No-BS, no-logs IP address returner." />
     <style>
-        @font-face {
-            font-family: 'Source Sans Pro';
-            src: url(/jb.woff2);
-        }
-
         h1 {
             font-size: 32px;
             font-size: 3vw;
@@ -19,7 +19,7 @@
             position: fixed;
             align-items: center;
             justify-content: center;
-            font-family: 'Source Sans Pro', sans-serif;
+            font-family: Arial, Verdana, Helvetica, sans-serif;
         }
 
         .stack {
@@ -31,8 +31,8 @@
 <body onload="onLoad()">
     <h1>
         <div class="stack">
-            <div id="ip4txt" style="display: none;">Your public IPv4 is:&nbsp;<code id="ip4">(none)</code></div>
-            <div id="ip6txt" style="display: none;">Your public IPv6 is:&nbsp;<code id="ip6">(none)</code></div>
+            <div id="ip4txt" hidden>Your public IPv4 is:&nbsp;<code id="ip4">(none)</code></div>
+            <div id="ip6txt" hidden>Your public IPv6 is:&nbsp;<code id="ip6">(none)</code></div>
         </div>
     </h1>
     <script>
@@ -45,14 +45,14 @@
             let v4 = await fetch("https://v4.giveip.io/raw").then(req => req.text().catch(failed => { console.log("Request failed:" + failed) }));
             if (v4 !== undefined) {
                 ip4.innerText = v4;
-                ip4txt.style.display = null;
+                ip4txt.hidden = false;
                 didSucceed = true;
             }
             document.getElementById("title").innerText = `Your IP is ${v4}`;
             let v6 = await fetch("https://v6.giveip.io/raw").then(req => req.text()).catch(failed => { console.log("Request failed:" + failed) });
             if (v6 !== undefined) {
                 ip6.innerText = v6;
-                ip6txt.style.display = null;
+                ip6txt.hidden = false;
                 didSucceed = true;
             }
             if (!didSucceed) {

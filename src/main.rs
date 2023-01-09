@@ -21,8 +21,6 @@ async fn handle(req: Request<Body>) -> Result<Response<Body>, Infallible> {
     );
     if req.uri() == "/raw" {
         return Ok(Response::new(Body::from(pretty_addr)));
-    } else if req.uri() == "/jb.woff2" {
-        return Ok(Response::new(Body::from(include_bytes!("jb.woff2").to_vec())))
     }
     let accept = headers
         .get("Accept")
@@ -30,7 +28,7 @@ async fn handle(req: Request<Body>) -> Result<Response<Body>, Infallible> {
     let body = if accept.contains("text/html") {
         include_str!("index.html").to_string()
     } else {
-        format!("{}\n", pretty_addr)
+        format!("{pretty_addr}\n")
     };
 
     let r = Ok(Response::new(Body::from(body)));
@@ -49,7 +47,7 @@ async fn main() {
         #[cfg(debug_assertions)]
         let st = Instant::now();
 
-        let service = service_fn(move |req| handle(req));
+        let service = service_fn(handle);
 
         let r = async move { Ok::<_, Infallible>(service) };
 
@@ -72,9 +70,9 @@ async fn main() {
                 .expect("failed to listen for ctrl+c");
         });
 
-    println!("Listening on http://{}", addr);
+    println!("Listening on http://{addr}");
 
     if let Err(e) = server.await {
-        eprintln!("server error: {}", e);
+        eprintln!("server error: {e}");
     }
 }
