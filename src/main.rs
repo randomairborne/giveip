@@ -13,8 +13,10 @@ async fn home(
     let real_ip = headers.get("X-Real-IP").map_or_else(
         || sock_addr.ip().to_string(),
         |ip| {
-            ip.to_str()
-                .map_or_else(|_| sock_addr.ip().to_string(), std::string::ToString::to_string)
+            ip.to_str().map_or_else(
+                |_| sock_addr.ip().to_string(),
+                std::string::ToString::to_string,
+            )
         },
     );
     let accept = headers
@@ -37,8 +39,10 @@ async fn raw(ConnectInfo(sock_addr): ConnectInfo<SocketAddr>, headers: HeaderMap
     let real_ip = headers.get("X-Real-IP").map_or_else(
         || sock_addr.ip().to_string(),
         |ip| {
-            ip.to_str()
-                .map_or_else(|_| sock_addr.ip().to_string(), std::string::ToString::to_string)
+            ip.to_str().map_or_else(
+                |_| sock_addr.ip().to_string(),
+                std::string::ToString::to_string,
+            )
         },
     );
     format!("{real_ip}\n")
