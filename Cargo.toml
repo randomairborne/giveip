@@ -10,8 +10,9 @@ categories = ["web-programming::http-server"]
 description = "A simple hyper http server to echo back IP addresses"
 
 [dependencies]
-hyper = { version = "0.14", features = ["server", "tcp", "http1", "http2"] }
+axum = { version = "0.6", features = ["tokio", "http1", "http2"], default-features = false }
 tokio = { version = "1", features = ["rt-multi-thread", "signal", "macros", "net"] }
+axum-server = { version = "0.4", features = ["tls-rustls"]}
 
 [profile.release]
 lto = true
