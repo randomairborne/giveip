@@ -12,7 +12,7 @@ description = "A simple hyper http server to echo back IP addresses"
 [dependencies]
 axum = { version = "0.6", features = ["tokio", "http1", "http2"], default-features = false }
 tokio = { version = "1", features = ["rt-multi-thread", "signal", "macros", "net"] }
-axum-server = { version = "0.4", features = ["tls-rustls"]}
+axum-server = "0.4"
 
 [profile.release]
 lto = true

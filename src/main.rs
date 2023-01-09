@@ -2,15 +2,19 @@
 
 use std::net::SocketAddr;
 
-use axum::{extract::ConnectInfo, http::HeaderMap};
-use axum_server::{tls_rustls::RustlsConfig, Handle};
+use axum::{
+    extract::{ConnectInfo, State},
+    http::HeaderMap,
+};
+use axum_server::Handle;
 
 #[allow(clippy::unused_async)]
 async fn home(
     ConnectInfo(sock_addr): ConnectInfo<SocketAddr>,
     headers: HeaderMap,
+    State(header_name): State<String>,
 ) -> ([(&'static str, &'static str); 1], String) {
-    let real_ip = headers.get("X-Real-IP").map_or_else(
+    let real_ip = headers.get(&header_name).map_or_else(
         || sock_addr.ip().to_string(),
         |ip| {
             ip.to_str().map_or_else(
@@ -35,8 +39,12 @@ async fn home(
     }
 }
 #[allow(clippy::unused_async)]
-async fn raw(ConnectInfo(sock_addr): ConnectInfo<SocketAddr>, headers: HeaderMap) -> String {
-    let real_ip = headers.get("X-Real-IP").map_or_else(
+async fn raw(
+    ConnectInfo(sock_addr): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
+    State(header_name): State<String>,
+) -> ([(&'static str, &'static str); 1], String) {
+    let real_ip = headers.get(&header_name).map_or_else(
         || sock_addr.ip().to_string(),
         |ip| {
             ip.to_str().map_or_else(
@@ -45,7 +53,10 @@ async fn raw(ConnectInfo(sock_addr): ConnectInfo<SocketAddr>, headers: HeaderMap
             )
         },
     );
-    format!("{real_ip}\n")
+    (
+        [("Access-Control-Allow-Origin", "*")],
+        format!("{real_ip}\n"),
+    )
 }
 
 #[tokio::main]
@@ -57,45 +68,19 @@ async fn main() {
             .parse::<u16>()
             .unwrap_or(8080),
     ));
-    let tls_addr = std::net::SocketAddr::from((
-        [0, 0, 0, 0],
-        std::env::var("HTTPS_PORT")
-            .unwrap_or_else(|_| 4443.to_string())
-            .parse::<u16>()
-            .unwrap_or(4443),
-    ));
+    let client_ip_var =
+        std::env::var("CLIENT_IP_HEADER").unwrap_or_else(|_| "X-Real-IP".to_string());
     let app = axum::Router::new()
         .route("/", axum::routing::get(home))
         .route("/raw", axum::routing::get(raw))
-        .with_state(());
+        .with_state(client_ip_var);
     let handle = Handle::new();
-    let perhaps_cert = std::env::var("CERTIFICATE");
-    let perhaps_key = std::env::var("PRIVATE_KEY");
     let sd_handle = handle.clone();
     tokio::task::spawn(async move {
         tokio::signal::ctrl_c().await.ok();
         println!("Server shutting down...");
         sd_handle.shutdown();
     });
-    if perhaps_cert.is_ok() || perhaps_key.is_ok() {
-        if let (Ok(cert), Ok(key)) = (perhaps_cert, perhaps_key) {
-            let tls_cfg = RustlsConfig::from_pem(cert.into(), key.into())
-                .await
-                .expect("Error loading certificate or privkey!");
-            let app = app.clone();
-            let handle = handle.clone();
-            tokio::task::spawn(async move {
-                println!("Listening on https://{tls_addr}");
-                axum_server::bind_rustls(tls_addr, tls_cfg)
-                    .handle(handle)
-                    .serve(app.into_make_service_with_connect_info::<std::net::SocketAddr>())
-                    .await
-                    .expect("Failed to run https server");
-            });
-        } else {
-            panic!("Both CERTIFICATE and PRIVATE_KEY must be set to run https")
-        }
-    }
     println!("Listening on http://{addr}");
     axum_server::bind(addr)
         .handle(handle)
