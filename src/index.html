@@ -1,17 +1,20 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title id="title">What's my IP?</title>
-    <noscript>
-        <meta http-equiv="refresh" content="0; url='/raw'" />
-    </noscript>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A simple website to return your IP address. No logs are kept.">
     <meta property="og:title" content="GiveIP" />
     <meta property="og:url" content="https://giveip.io/" />
     <meta property="og:description" content="A No-BS, no-logs IP address returner." />
+    <noscript>
+        <meta http-equiv="refresh" content="0; url='/raw'" />
+    </noscript>
+    <title id="title">What's my IP?</title>
+    <link rel="icon" href="data:,">
     <style>
         h1 {
-            font-size: 32px;
             font-size: 3vw;
             height: 100%;
             width: 100%;
@@ -56,7 +59,7 @@
                 didSucceed = true;
             }
             if (!didSucceed) {
-                ip6txt.innerHTML = "Failed to get any IP! Please report this to <a href=\"mailto:valk@randomairborne.dev\">valkyrie_pilot</a>"
+                window.location.href = "https://giveip.io/raw";
             }
         }
     </script>

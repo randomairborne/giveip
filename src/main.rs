@@ -7,20 +7,19 @@ use std::time::Instant;
 
 #[allow(clippy::unused_async)]
 async fn handle(req: Request<Body>) -> Result<Response<Body>, Infallible> {
-    #[cfg(debug_assertions)]
-    let st = Instant::now();
-
     let headers = req.headers();
-    let pretty_addr = headers.get("X-Real-IP").map_or_else(
-        || "(failed to get)".to_string(),
+    let addr = headers.get("X-Real-IP").map_or_else(
+        || "(failed to get)",
         |ip| {
             ip.to_str()
                 .unwrap_or("(invalid ip address string header set by proxy)")
-                .to_string()
         },
     );
-    if req.uri() == "/raw" {
-        return Ok(Response::new(Body::from(pretty_addr)));
+    let pretty_addr = format!("{addr}\n");
+    match req.uri().path() {
+        "/raw" => return Ok(Response::new(Body::from(pretty_addr))),
+        "/robots.txt" => return Ok(Response::new(Body::from("User-Agent: *\nAllow: /"))),
+        _ => {}
     }
     let accept = headers
         .get("Accept")
@@ -31,14 +30,7 @@ async fn handle(req: Request<Body>) -> Result<Response<Body>, Infallible> {
         format!("{pretty_addr}\n")
     };
 
-    let r = Ok(Response::new(Body::from(body)));
-    #[cfg(debug_assertions)]
-    {
-        let et = Instant::now();
-        let tt = et.duration_since(st);
-        println!("{}ns to handle request (pt2)", tt.as_nanos());
-    }
-    r
+    Ok(Response::new(Body::from(body)))
 }
 
 #[tokio::main]
@@ -60,7 +52,13 @@ async fn main() {
         r
     });
 
-    let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 8080));
+    let addr = std::net::SocketAddr::from((
+        [0, 0, 0, 0],
+        std::env::var("PORT")
+            .unwrap_or_else(|_| 8080.to_string())
+            .parse::<u16>()
+            .unwrap_or(8080),
+    ));
 
     let server = Server::bind(&addr)
         .serve(make_service)
