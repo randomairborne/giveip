@@ -12,17 +12,8 @@ use axum_server::Handle;
 async fn home(
     ConnectInfo(sock_addr): ConnectInfo<SocketAddr>,
     headers: HeaderMap,
-    State(header_name): State<String>,
+    State(maybe_header_name): State<Option<String>>,
 ) -> ([(&'static str, &'static str); 1], String) {
-    let real_ip = headers.get(&header_name).map_or_else(
-        || sock_addr.ip().to_string(),
-        |ip| {
-            ip.to_str().map_or_else(
-                |_| sock_addr.ip().to_string(),
-                std::string::ToString::to_string,
-            )
-        },
-    );
     let accept = headers
         .get("Accept")
         .map_or("*/*", |x| x.to_str().unwrap_or("invalid header value"));
@@ -34,29 +25,35 @@ async fn home(
     } else {
         (
             [("Content-Type", "text/plain; charset=utf-8")],
-            format!("{real_ip}\n"),
+            format!("{}\n", get_ip(sock_addr, headers, maybe_header_name)),
         )
     }
 }
+
 #[allow(clippy::unused_async)]
 async fn raw(
     ConnectInfo(sock_addr): ConnectInfo<SocketAddr>,
     headers: HeaderMap,
-    State(header_name): State<String>,
+    State(maybe_header_name): State<Option<String>>,
 ) -> ([(&'static str, &'static str); 1], String) {
-    let real_ip = headers.get(&header_name).map_or_else(
-        || sock_addr.ip().to_string(),
-        |ip| {
-            ip.to_str().map_or_else(
-                |_| sock_addr.ip().to_string(),
-                std::string::ToString::to_string,
-            )
-        },
-    );
     (
         [("Access-Control-Allow-Origin", "*")],
-        format!("{real_ip}\n"),
+        format!("{}\n", get_ip(sock_addr, headers, maybe_header_name)),
     )
+}
+
+fn get_ip(addr: SocketAddr, headers: HeaderMap, maybe_header_name: Option<String>) -> String {
+    if let Some(header_name) = maybe_header_name {
+        headers.get(&header_name).map_or_else(
+            || format!("No {header_name} header found"),
+            |ip| {
+                ip.to_str()
+                    .map_or_else(|_| addr.ip().to_string(), std::string::ToString::to_string)
+            },
+        )
+    } else {
+        addr.ip().to_string()
+    }
 }
 
 #[tokio::main]
@@ -68,8 +65,7 @@ async fn main() {
             .parse::<u16>()
             .unwrap_or(8080),
     ));
-    let client_ip_var =
-        std::env::var("CLIENT_IP_HEADER").unwrap_or_else(|_| "X-Real-IP".to_string());
+    let client_ip_var = std::env::var("CLIENT_IP_HEADER").ok();
     let app = axum::Router::new()
         .route("/", axum::routing::get(home))
         .route("/raw", axum::routing::get(raw))
