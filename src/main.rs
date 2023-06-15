@@ -1,4 +1,4 @@
-#![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
 use std::net::SocketAddr;
 
@@ -6,7 +6,6 @@ use axum::{
     extract::{ConnectInfo, State},
     http::HeaderMap,
 };
-use axum_server::Handle;
 
 #[allow(clippy::unused_async)]
 async fn home(
@@ -25,7 +24,7 @@ async fn home(
     } else {
         (
             [("Content-Type", "text/plain; charset=utf-8")],
-            format!("{}\n", get_ip(sock_addr, headers, maybe_header_name)),
+            format!("{}\n", get_ip(sock_addr, &headers, maybe_header_name)),
         )
     }
 }
@@ -38,22 +37,23 @@ async fn raw(
 ) -> ([(&'static str, &'static str); 1], String) {
     (
         [("Access-Control-Allow-Origin", "*")],
-        format!("{}\n", get_ip(sock_addr, headers, maybe_header_name)),
+        format!("{}\n", get_ip(sock_addr, &headers, maybe_header_name)),
     )
 }
 
-fn get_ip(addr: SocketAddr, headers: HeaderMap, maybe_header_name: Option<String>) -> String {
-    if let Some(header_name) = maybe_header_name {
-        headers.get(&header_name).map_or_else(
-            || format!("No {header_name} header found"),
-            |ip| {
-                ip.to_str()
-                    .map_or_else(|_| addr.ip().to_string(), std::string::ToString::to_string)
-            },
-        )
-    } else {
-        addr.ip().to_string()
-    }
+fn get_ip(addr: SocketAddr, headers: &HeaderMap, maybe_header_name: Option<String>) -> String {
+    maybe_header_name.map_or_else(
+        || addr.ip().to_string(),
+        |header_name| {
+            headers.get(&header_name).map_or_else(
+                || format!("No {header_name} header found"),
+                |ip| {
+                    ip.to_str()
+                        .map_or_else(|_| addr.ip().to_string(), std::string::ToString::to_string)
+                },
+            )
+        },
+    )
 }
 
 #[tokio::main]
@@ -70,17 +70,9 @@ async fn main() {
         .route("/", axum::routing::get(home))
         .route("/raw", axum::routing::get(raw))
         .with_state(client_ip_var);
-    let handle = Handle::new();
-    let sd_handle = handle.clone();
-    tokio::task::spawn(async move {
-        tokio::signal::ctrl_c().await.ok();
-        println!("Server shutting down...");
-        sd_handle.shutdown();
-    });
     println!("Listening on http://{addr}");
-    axum_server::bind(addr)
-        .handle(handle)
-        .serve(app.into_make_service_with_connect_info::<std::net::SocketAddr>())
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .await
-        .expect("Failed to run http server");
+        .unwrap();
 }
