@@ -15,6 +15,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "signal", "macros", "net
 prometheus = { version = "0.13", default-features = false }
 tokio-shutdown ={ version = "0.1", default-features = false }
 thiserror = "1"
+prometheus-static-metric = "0.5.1"
 
 [profile.release]
 lto = true

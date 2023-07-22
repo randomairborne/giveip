@@ -11,9 +11,9 @@ use axum::{
     http::{HeaderMap, HeaderName, HeaderValue, Request, StatusCode},
     middleware::Next,
     response::{IntoResponse, Response},
-    routing::get,
+    routing::{any, get},
 };
-use prometheus::{Encoder, IntCounter, Registry, TextEncoder};
+use prometheus::{Encoder, IntCounterVec, Opts, Registry, TextEncoder};
 
 #[allow(clippy::unused_async)]
 async fn home(
@@ -28,16 +28,16 @@ async fn home(
     let v4 = ip.is_ipv4();
     if accept.contains("text/html") {
         if v4 {
-            state.requests_browser_v4.inc();
+            state.requests.browser.v4.inc();
         } else {
-            state.requests_browser_v6.inc();
+            state.requests.browser.v6.inc();
         }
         Ok(HtmlOrRaw::Html(include_str!("index.html")))
     } else {
         if v4 {
-            state.requests_cmdline_v4.inc();
+            state.requests.cmdline.v4.inc();
         } else {
-            state.requests_cmdline_v6.inc();
+            state.requests.cmdline.v6.inc();
         }
         Ok(HtmlOrRaw::Raw(format!("{ip}\n")))
     }
@@ -51,9 +51,9 @@ async fn raw(
 ) -> Result<String, Error> {
     let ip = get_ip(sock_addr, &headers, state.clone())?;
     if ip.is_ipv4() {
-        state.requests_raw_v4.inc();
+        state.requests.raw.v4.inc();
     } else {
-        state.requests_raw_v6.inc();
+        state.requests.raw.v6.inc();
     }
     Ok(format!("{ip}\n"))
 }
@@ -111,7 +111,7 @@ async fn main() {
         .with_state(state.clone());
     let app = axum::Router::new()
         .route("/", get(home))
-        .route("/raw", get(raw))
+        .route("/raw", any(raw))
         .layer(axum::middleware::from_fn(nocors))
         .with_state(state.clone());
     let sd = tokio_shutdown::Shutdown::new().unwrap();
@@ -139,12 +139,7 @@ async fn main() {
 
 #[derive(Clone)]
 pub struct AppState {
-    requests_raw_v4: IntCounter,
-    requests_raw_v6: IntCounter,
-    requests_browser_v4: IntCounter,
-    requests_browser_v6: IntCounter,
-    requests_cmdline_v4: IntCounter,
-    requests_cmdline_v6: IntCounter,
+    requests: Arc<IpRequests>,
     reg: Registry,
     header: Option<Arc<HeaderName>>,
 }
@@ -155,53 +150,33 @@ impl AppState {
     /// This function can panic when its hardcoded values are invalid
     /// or the passed `client_ip_name` is not a valid header name
     pub fn new(client_ip_name: Option<String>) -> Self {
-        let requests_raw_v6 = IntCounter::new(
-            "requests_raw_v6",
-            "Number of requests to the v6 raw endpoint",
-        )
-        .unwrap();
-        let requests_raw_v4 = IntCounter::new(
-            "requests_raw_v4",
-            "Number of requests to the v4 raw endpoint",
-        )
-        .unwrap();
-        let requests_browser_v4 = IntCounter::new(
-            "requests_browser_v4",
-            "Number of requests to the root endpoint returning html over ipv4",
-        )
-        .unwrap();
-        let requests_browser_v6 = IntCounter::new(
-            "requests_browser_v6",
-            "Number of requests to the root endpoint returning html over ipv6",
-        )
-        .unwrap();
-        let requests_cmdline_v4 = IntCounter::new(
-            "requests_cmdline_v4",
-            "Number of requests to root returning plaintext over ipv4",
-        )
-        .unwrap();
-        let requests_cmdline_v6 = IntCounter::new(
-            "requests_cmdline_v6",
-            "Number of requests to root returning plaintext over ipv6",
-        )
-        .unwrap();
+        const NAMESPACE: &str = env!("CARGO_PKG_NAME");
+        let requests_opts =
+            Opts::new("requests", "Number of IP requests handled").namespace(NAMESPACE);
+        let requests_untyped =
+            IntCounterVec::new(requests_opts, &["ip_version", "request_kind"]).unwrap();
+        let requests = Arc::new(IpRequests::from(&requests_untyped));
         let reg = Registry::new();
-        reg.register(Box::new(requests_raw_v4.clone())).unwrap();
-        reg.register(Box::new(requests_raw_v6.clone())).unwrap();
-        reg.register(Box::new(requests_browser_v4.clone())).unwrap();
-        reg.register(Box::new(requests_browser_v6.clone())).unwrap();
-        reg.register(Box::new(requests_cmdline_v4.clone())).unwrap();
-        reg.register(Box::new(requests_cmdline_v6.clone())).unwrap();
+        reg.register(Box::new(requests_untyped)).unwrap();
         Self {
-            requests_raw_v6,
-            requests_raw_v4,
-            requests_browser_v4,
-            requests_browser_v6,
-            requests_cmdline_v4,
-            requests_cmdline_v6,
+            requests,
             reg,
             header: client_ip_name.map(|v| Arc::new(HeaderName::try_from(v).unwrap())),
         }
+    }
+}
+
+prometheus_static_metric::make_static_metric! {
+    pub struct IpRequests: IntCounter {
+        "request_kind" => {
+            cmdline,
+            browser,
+            raw,
+        },
+        "ip_version" => {
+            v4,
+            v6
+        },
     }
 }
 
