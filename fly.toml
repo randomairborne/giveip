@@ -17,6 +17,10 @@ kill_timeout = "5s"
 [build]
   image = "ghcr.io/randomairborne/giveip:latest"
 
+[metrics]
+  port = 9090
+  path = "/metrics"
+
 [[services]]
   protocol = "tcp"
   internal_port = 8080
