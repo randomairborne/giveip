@@ -8,6 +8,8 @@
     <meta property="og:title" content="GiveIP" />
     <meta property="og:url" content="https://giveip.io/" />
     <meta property="og:description" content="A No-BS, no-logs IP address returner." />
+    <link rel="preload" href="https://v6.giveip.io/raw" as="fetch" />
+    <link rel="preload" href="https://v4.giveip.io/raw" as="fetch" />
     <noscript>
         <meta http-equiv="refresh" content="0; url='/raw'" />
     </noscript>
@@ -45,21 +47,22 @@
             const ip4txt = document.getElementById("ip4txt");
             const ip6txt = document.getElementById("ip6txt");
             let didSucceed = false;
-            let v4 = await fetch("https://v4.giveip.io/raw").then(req => req.text().catch(failed => { console.log("Request failed:" + failed) }));
+            let v6r = await fetch("https://v6.giveip.io/raw").then(req => req.text()).catch(failed => { console.log("Request failed:" + failed) });
+            let v4r = await fetch("https://v4.giveip.io/raw").then(req => req.text()).catch(failed => { console.log("Request failed:" + failed) });
+            let [v4, v6] = await Promise.all([v4r, v6r]);
             if (v4 !== undefined) {
                 ip4.innerText = v4;
                 ip4txt.hidden = false;
                 didSucceed = true;
+                document.getElementById("title").innerText = `Your IP is ${v4}`;
             }
-            document.getElementById("title").innerText = `Your IP is ${v4}`;
-            let v6 = await fetch("https://v6.giveip.io/raw").then(req => req.text()).catch(failed => { console.log("Request failed:" + failed) });
             if (v6 !== undefined) {
                 ip6.innerText = v6;
                 ip6txt.hidden = false;
                 didSucceed = true;
             }
             if (!didSucceed) {
-                window.location.href = "https://giveip.io/raw";
+                window.location.href = "/raw";
             }
         }
     </script>
