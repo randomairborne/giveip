@@ -16,25 +16,24 @@
     <title id="title">What's my IP?</title>
     <link rel="icon" href="data:,">
     <style>
+        html, body {
+            padding: 10%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
         h1 {
             font-size: 3vw;
             height: 100%;
-            width: 100%;
-            display: flex;
-            position: fixed;
-            align-items: center;
-            justify-content: center;
             font-family: Arial, Verdana, Helvetica, sans-serif;
-            padding: 10vw;
         }
-
         .stack {
             display: inline;
         }
     </style>
 </head>
 
-<body onload="onLoad()">
+<body>
     <h1>
         <div class="stack">
             <div id="ip4txt" hidden>Your public IPv4 is:&nbsp;<code id="ip4">(none)</code></div>
@@ -42,30 +41,25 @@
         </div>
     </h1>
     <script>
-        async function onLoad() {
-            const ip4 = document.getElementById("ip4");
-            const ip6 = document.getElementById("ip6");
-            const ip4txt = document.getElementById("ip4txt");
-            const ip6txt = document.getElementById("ip6txt");
-            let didSucceed = false;
-            let v6r = await fetch("https://v6.giveip.io/raw").then(req => req.text()).catch(failed => { console.log("Request failed:" + failed) });
-            let v4r = await fetch("https://v4.giveip.io/raw").then(req => req.text()).catch(failed => { console.log("Request failed:" + failed) });
-            let [v4, v6] = await Promise.all([v4r, v6r]);
-            if (v4 !== undefined) {
-                ip4.innerText = v4;
+        const ip4 = document.getElementById("ip4");
+        const ip6 = document.getElementById("ip6");
+        const ip4txt = document.getElementById("ip4txt");
+        const ip6txt = document.getElementById("ip6txt");
+        fetch("https://v4.giveip.io/raw")
+            .then(req => req.text())
+            .then(resp => {
+                ip4.innerText = resp;
                 ip4txt.hidden = false;
-                didSucceed = true;
                 document.getElementById("title").innerText = `Your IP is ${v4}`;
-            }
-            if (v6 !== undefined) {
-                ip6.innerText = v6;
+            })
+            .catch(failed => { console.log("Request failed:" + failed) });
+        fetch("https://v6.giveip.io/raw")
+            .then(req => req.text())
+            .then(resp => {
+                ip6.innerText = resp;
                 ip6txt.hidden = false;
-                didSucceed = true;
-            }
-            if (!didSucceed) {
-                window.location.href = "/raw";
-            }
-        }
+            })
+            .catch(failed => { console.log("Request failed:" + failed) });
     </script>
 
 </html>
