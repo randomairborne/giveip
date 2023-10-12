@@ -18,4 +18,4 @@ prometheus-static-metric = "0.5"
 thiserror = "1"
 
 [profile.release]
-lto = true
+lto = "fat"
