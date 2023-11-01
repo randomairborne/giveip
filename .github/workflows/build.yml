@@ -5,6 +5,10 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  packages: write
+  contents: read
+
 jobs:
   check:
     uses: ./.github/workflows/check.yml
