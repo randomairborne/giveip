@@ -33,13 +33,27 @@ kill_timeout = "5s"
   [[services.ports]]
     port = 443
     handlers = ["tls", "http"]
+
   [services.concurrency]
     type = "connections"
     hard_limit = 25
     soft_limit = 20
 
-  [[services.tcp_checks]]
-    interval = "15s"
-    timeout = "2s"
-    grace_period = "1s"
-    restart_limit = 0
+  [[services.http_checks]]
+    interval = 10000
+    grace_period = "5s"
+    path = "/"
+    protocol = "http"
+    timeout = 2000
+    [services.http_checks.headers]
+      accept = "text/html"
+      Fly-Client-IP = "1.1.1.1"
+
+  [[services.http_checks]]
+    interval = 10000
+    grace_period = "5s"
+    path = "/raw"
+    protocol = "http"
+    timeout = 2000
+    [services.http_checks.headers]
+      Fly-Client-IP = "1.1.1.1"
