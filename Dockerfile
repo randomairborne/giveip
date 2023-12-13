@@ -12,4 +12,4 @@ COPY --from=builder /build/target/release/giveip /usr/bin/giveip
 
 EXPOSE 8080
 
-CMD [ "/usr/bin/giveip" ]
+ENTRYPOINT "/usr/bin/giveip"
