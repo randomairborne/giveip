@@ -7,13 +7,58 @@ use std::{
 };
 
 use axum::{
-    extract::{ConnectInfo, State},
-    http::{HeaderMap, HeaderName, HeaderValue, Request, StatusCode},
+    extract::{ConnectInfo, Request, State},
+    http::{HeaderMap, HeaderName, HeaderValue, StatusCode},
     middleware::Next,
     response::{IntoResponse, Response},
     routing::{any, get},
 };
 use prometheus::{Encoder, IntCounterVec, Opts, Registry, TextEncoder};
+use tokio::net::TcpListener;
+
+#[tokio::main]
+async fn main() {
+    let addr = SocketAddr::from((
+        [0, 0, 0, 0],
+        std::env::var("PORT")
+            .unwrap_or_else(|_| 8080.to_string())
+            .parse::<u16>()
+            .unwrap_or(8080),
+    ));
+    let metrics_addr = SocketAddr::from((
+        [0, 0, 0, 0],
+        std::env::var("METRICS_PORT")
+            .unwrap_or_else(|_| 9090.to_string())
+            .parse::<u16>()
+            .unwrap_or(9090),
+    ));
+    let client_ip_var = std::env::var("CLIENT_IP_HEADER").ok();
+    let state = AppState::new(client_ip_var);
+    let metrics_app = axum::Router::new()
+        .route("/metrics", get(metrics))
+        .with_state(state.clone());
+    let app = axum::Router::new()
+        .route("/", get(home))
+        .route("/raw", any(raw))
+        .layer(axum::middleware::from_fn(nocors))
+        .with_state(state.clone());
+    println!(
+        "Listening on http://{addr} for ip requests and http://{metrics_addr} for metrics requests"
+    );
+    let metrics_tcp = TcpListener::bind(metrics_addr).await.unwrap();
+    let tcp = TcpListener::bind(addr).await.unwrap();
+
+    tokio::spawn(async move {
+        axum::serve(metrics_tcp, metrics_app)
+            .with_graceful_shutdown(vss::shutdown_signal())
+            .await
+            .unwrap();
+    });
+    axum::serve(tcp, app.into_make_service_with_connect_info::<SocketAddr>())
+        .with_graceful_shutdown(vss::shutdown_signal())
+        .await
+        .unwrap();
+}
 
 #[allow(clippy::unused_async)]
 async fn home(
@@ -80,61 +125,12 @@ async fn metrics(State(state): State<AppState>) -> Result<Vec<u8>, Error> {
     Ok(buffer)
 }
 
-async fn nocors<B: Send>(request: Request<B>, next: Next<B>) -> Response {
+async fn nocors(request: Request, next: Next) -> Response {
     let mut response = next.run(request).await;
     response
         .headers_mut()
         .insert("Access-Control-Allow-Origin", HeaderValue::from_static("*"));
     response
-}
-
-#[tokio::main]
-async fn main() {
-    let addr = SocketAddr::from((
-        [0, 0, 0, 0],
-        std::env::var("PORT")
-            .unwrap_or_else(|_| 8080.to_string())
-            .parse::<u16>()
-            .unwrap_or(8080),
-    ));
-    let metrics_addr = SocketAddr::from((
-        [0, 0, 0, 0],
-        std::env::var("METRICS_PORT")
-            .unwrap_or_else(|_| 9090.to_string())
-            .parse::<u16>()
-            .unwrap_or(9090),
-    ));
-    let client_ip_var = std::env::var("CLIENT_IP_HEADER").ok();
-    let state = AppState::new(client_ip_var);
-    let metrics_app = axum::Router::new()
-        .route("/metrics", get(metrics))
-        .with_state(state.clone());
-    let app = axum::Router::new()
-        .route("/", get(home))
-        .route("/raw", any(raw))
-        .layer(axum::middleware::from_fn(nocors))
-        .with_state(state.clone());
-    let sd = tokio_shutdown::Shutdown::new().unwrap();
-    println!(
-        "Listening on http://{addr} for ip requests and http://{metrics_addr} for metrics requests"
-    );
-    let sd_s = sd.clone();
-    tokio::spawn(async move {
-        axum::Server::bind(&metrics_addr)
-            .serve(metrics_app.into_make_service())
-            .with_graceful_shutdown(async {
-                sd.handle().await;
-            })
-            .await
-            .unwrap();
-    });
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service_with_connect_info::<SocketAddr>())
-        .with_graceful_shutdown(async {
-            sd_s.handle().await;
-        })
-        .await
-        .unwrap();
 }
 
 #[derive(Clone)]
