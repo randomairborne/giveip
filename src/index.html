@@ -1,90 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <meta
-      name="description"
-      content="A simple website to return your IP address. No logs are kept."
+            name="description"
+            content="A simple website to return your IP address. No logs are kept."
     />
-    <meta property="og:title" content="GiveIP" />
-    <meta property="og:url" content="https://giveip.io/" />
+    <meta property="og:title" content="GiveIP"/>
+    <meta property="og:url" content="https://giveip.io/"/>
     <meta
-      property="og:description"
-      content="A No-BS, no-logs IP address returner."
+            property="og:description"
+            content="A No-BS, no-logs IP address returner."
     />
     <link
-      rel="preload"
-      href="https://v6.giveip.io/raw"
-      as="fetch"
-      crossorigin="anonymous"
+            rel="preload"
+            href="https://v6.giveip.io/raw"
+            as="fetch"
+            crossorigin="anonymous"
     />
     <link
-      rel="preload"
-      href="https://v4.giveip.io/raw"
-      as="fetch"
-      crossorigin="anonymous"
+            rel="preload"
+            href="https://v4.giveip.io/raw"
+            as="fetch"
+            crossorigin="anonymous"
     />
     <noscript>
-      <meta http-equiv="refresh" content="0; url='/raw'" />
+        <meta http-equiv="refresh" content="0; url='/raw'"/>
     </noscript>
     <title id="title">What's my IP?</title>
-    <link rel="icon" href="data:," />
+    <link rel="icon" href="data:,"/>
     <style>
-      html,
-      body {
-        padding: 10%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      h1 {
-        font-size: 3vw;
-        height: 100%;
-        font-family: Arial, Verdana, Helvetica, sans-serif;
-      }
-      .stack {
-        display: inline;
-      }
-    </style>
-  </head>
+        html,
+        body {
+            padding: 10%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-  <body>
-    <h1>
-      <div class="stack">
+        h1 {
+            font-size: 3vw;
+            height: 100%;
+            font-family: Arial, Verdana, Helvetica, sans-serif;
+        }
+
+        .stack {
+            display: inline;
+        }
+    </style>
+</head>
+
+<body>
+<h1>
+    <div class="stack">
         <div id="ip4txt" hidden>
-          Your public IPv4 is:&nbsp;<code id="ip4">(none)</code>
+            Your public IPv4 is:&nbsp;<code id="ip4">(none)</code>
         </div>
         <div id="ip6txt" hidden>
-          Your public IPv6 is:&nbsp;<code id="ip6">(none)</code>
+            Your public IPv6 is:&nbsp;<code id="ip6">(none)</code>
         </div>
-      </div>
-    </h1>
-    <script>
-      const ip4 = document.getElementById("ip4");
-      const ip6 = document.getElementById("ip6");
-      const ip4txt = document.getElementById("ip4txt");
-      const ip6txt = document.getElementById("ip6txt");
-      fetch("https://v4.giveip.io/raw")
+    </div>
+</h1>
+<script>
+    const ip4 = document.getElementById("ip4");
+    const ip6 = document.getElementById("ip6");
+    const ip4txt = document.getElementById("ip4txt");
+    const ip6txt = document.getElementById("ip6txt");
+    fetch("https://v4.giveip.io/raw")
         .then((req) => req.text())
         .then((resp) => {
-          ip4.innerText = resp;
-          ip4txt.hidden = false;
-          document.getElementById("title").innerText = `Your IP is ${v4}`;
+            ip4.innerText = resp;
+            ip4txt.hidden = false;
+            document.getElementById("title").innerText = `Your IP is ${v4}`;
         })
         .catch((failed) => {
-          console.log("Request failed:" + failed);
+            console.log("Request failed:" + failed);
         });
-      fetch("https://v6.giveip.io/raw")
+    fetch("https://v6.giveip.io/raw")
         .then((req) => req.text())
         .then((resp) => {
-          ip6.innerText = resp;
-          ip6txt.hidden = false;
+            ip6.innerText = resp;
+            ip6txt.hidden = false;
         })
         .catch((failed) => {
-          console.log("Request failed:" + failed);
+            console.log("Request failed:" + failed);
         });
-    </script>
-    <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "872609be4c924b219e5de38a6e0b26a0"}'></script><!-- End Cloudflare Web Analytics -->
-  </body>
+</script>
+<!-- Cloudflare Web Analytics -->
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js'
+        data-cf-beacon='{"token": "872609be4c924b219e5de38a6e0b26a0"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
 </html>

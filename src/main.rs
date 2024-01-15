@@ -13,7 +13,6 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{any, get},
 };
-use prometheus::{Encoder, IntCounterVec, Opts, Registry, TextEncoder};
 use tokio::net::TcpListener;
 
 #[tokio::main]
@@ -25,35 +24,15 @@ async fn main() {
             .parse::<u16>()
             .unwrap_or(8080),
     ));
-    let metrics_addr = SocketAddr::from((
-        [0, 0, 0, 0],
-        std::env::var("METRICS_PORT")
-            .unwrap_or_else(|_| 9090.to_string())
-            .parse::<u16>()
-            .unwrap_or(9090),
-    ));
     let client_ip_var = std::env::var("CLIENT_IP_HEADER").ok();
     let state = AppState::new(client_ip_var);
-    let metrics_app = axum::Router::new()
-        .route("/metrics", get(metrics))
-        .with_state(state.clone());
     let app = axum::Router::new()
         .route("/", get(home))
         .route("/raw", any(raw))
         .layer(axum::middleware::from_fn(nocors))
         .with_state(state.clone());
-    println!(
-        "Listening on http://{addr} for ip requests and http://{metrics_addr} for metrics requests"
-    );
-    let metrics_tcp = TcpListener::bind(metrics_addr).await.unwrap();
+    println!("Listening on http://{addr} for ip requests");
     let tcp = TcpListener::bind(addr).await.unwrap();
-
-    tokio::spawn(async move {
-        axum::serve(metrics_tcp, metrics_app)
-            .with_graceful_shutdown(vss::shutdown_signal())
-            .await
-            .unwrap();
-    });
     axum::serve(tcp, app.into_make_service_with_connect_info::<SocketAddr>())
         .with_graceful_shutdown(vss::shutdown_signal())
         .await
@@ -70,20 +49,9 @@ async fn home(
         .get("Accept")
         .map_or("*/*", |x| x.to_str().unwrap_or("invalid header value"));
     let ip = get_ip(sock_addr, &headers, state.clone())?;
-    let v4 = ip.is_ipv4();
     if accept.contains("text/html") {
-        if v4 {
-            state.requests.browser.v4.inc();
-        } else {
-            state.requests.browser.v6.inc();
-        }
         Ok(HtmlOrRaw::Html(include_str!("index.html")))
     } else {
-        if v4 {
-            state.requests.cmdline.v4.inc();
-        } else {
-            state.requests.cmdline.v6.inc();
-        }
         Ok(HtmlOrRaw::Raw(format!("{ip}\n")))
     }
 }
@@ -95,11 +63,6 @@ async fn raw(
     State(state): State<AppState>,
 ) -> Result<String, Error> {
     let ip = get_ip(sock_addr, &headers, state.clone())?;
-    if ip.is_ipv4() {
-        state.requests.raw.v4.inc();
-    } else {
-        state.requests.raw.v6.inc();
-    }
     Ok(format!("{ip}\n"))
 }
 
@@ -116,15 +79,6 @@ fn get_ip(addr: SocketAddr, headers: &HeaderMap, state: AppState) -> Result<IpAd
     }
 }
 
-#[allow(clippy::unused_async)]
-async fn metrics(State(state): State<AppState>) -> Result<Vec<u8>, Error> {
-    let mut buffer = Vec::with_capacity(8192);
-    let encoder = TextEncoder::new();
-    let metrics = state.reg.gather();
-    encoder.encode(&metrics, &mut buffer)?;
-    Ok(buffer)
-}
-
 async fn nocors(request: Request, next: Next) -> Response {
     let mut response = next.run(request).await;
     response
@@ -135,8 +89,6 @@ async fn nocors(request: Request, next: Next) -> Response {
 
 #[derive(Clone)]
 pub struct AppState {
-    requests: Arc<IpRequests>,
-    reg: Registry,
     header: Option<Arc<HeaderName>>,
 }
 
@@ -146,33 +98,9 @@ impl AppState {
     /// This function can panic when its hardcoded values are invalid
     /// or the passed `client_ip_name` is not a valid header name
     pub fn new(client_ip_name: Option<String>) -> Self {
-        const NAMESPACE: &str = env!("CARGO_PKG_NAME");
-        let requests_opts =
-            Opts::new("requests", "Number of IP requests handled").namespace(NAMESPACE);
-        let requests_untyped =
-            IntCounterVec::new(requests_opts, &["ip_version", "request_kind"]).unwrap();
-        let requests = Arc::new(IpRequests::from(&requests_untyped));
-        let reg = Registry::new();
-        reg.register(Box::new(requests_untyped)).unwrap();
         Self {
-            requests,
-            reg,
             header: client_ip_name.map(|v| Arc::new(HeaderName::try_from(v).unwrap())),
         }
-    }
-}
-
-prometheus_static_metric::make_static_metric! {
-    pub struct IpRequests: IntCounter {
-        "request_kind" => {
-            cmdline,
-            browser,
-            raw,
-        },
-        "ip_version" => {
-            v4,
-            v6
-        },
     }
 }
 
@@ -198,12 +126,10 @@ pub enum Error {
     ToStr(#[from] axum::http::header::ToStrError),
     #[error("Could not convert supplied header to IP address")]
     ToAddr(#[from] std::net::AddrParseError),
-    #[error("Prometheus failed to serialize: {0}")]
-    Prometheus(#[from] prometheus::Error),
 }
 
 impl IntoResponse for Error {
-    fn into_response(self) -> axum::response::Response {
+    fn into_response(self) -> Response {
         (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()).into_response()
     }
 }
