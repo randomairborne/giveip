@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="A simple website to return your IP address. No logs are kept."
+      content="A simple, fast website to return your IP address. No logs are kept."
     />
     <meta property="og:title" content="GiveIP" />
     <meta property="og:url" content="https://giveip.io/" />
@@ -25,7 +25,7 @@
       as="fetch"
       crossorigin="anonymous"
     />
-    <link rel="canonical" href="https://giveip.io/" >
+    <link rel="canonical" href="https://giveip.io/" />
     <noscript>
       <meta http-equiv="refresh" content="0; url='/raw'" />
     </noscript>
@@ -53,16 +53,14 @@
   </head>
 
   <body>
-    <h1>
-      <div class="stack">
-        <div id="ip4txt" hidden>
-          Your public IPv4 is:&nbsp;<code id="ip4">(none)</code>
-        </div>
-        <div id="ip6txt" hidden>
-          Your public IPv6 is:&nbsp;<code id="ip6">(none)</code>
-        </div>
+    <div class="stack large">
+      <div id="ip4txt" hidden>
+        Your public IPv4 is:&nbsp;<code id="ip4">(none)</code>
       </div>
-    </h1>
+      <div id="ip6txt" hidden>
+        Your public IPv6 is:&nbsp;<code id="ip6">(none)</code>
+      </div>
+    </div>
     <script>
       const ip4 = document.getElementById("ip4");
       const ip6 = document.getElementById("ip6");
@@ -73,7 +71,7 @@
         .then((resp) => {
           ip4.innerText = resp;
           ip4txt.hidden = false;
-          document.getElementById("title").innerText = `Your IP is ${v4}`;
+          document.getElementById("title").innerText = `Your IP is ${resp}`;
         })
         .catch((failed) => {
           console.log("Request failed:" + failed);
