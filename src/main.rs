@@ -27,8 +27,9 @@ async fn main() {
     let client_ip_var = std::env::var("CLIENT_IP_HEADER").ok();
     let state = AppState::new(client_ip_var);
     let app = axum::Router::new()
-        .route("/", get(home))
         .route("/raw", any(raw))
+        .layer(axum::middleware::from_fn(noindex))
+        .route("/", get(home))
         .layer(axum::middleware::from_fn(nocors))
         .with_state(state.clone());
     println!("Listening on http://{addr} for ip requests");
@@ -85,6 +86,14 @@ async fn nocors(request: Request, next: Next) -> Response {
         .headers_mut()
         .insert("Access-Control-Allow-Origin", HeaderValue::from_static("*"));
     response
+}
+
+async fn noindex(req: Request, next: Next) -> Response {
+    let mut resp = next.run(req).await;
+    let name = HeaderName::from_static("X-Robots-Tag");
+    let value = HeaderValue::from_static("noindex");
+    resp.headers_mut().insert(name, value);
+    resp
 }
 
 #[derive(Clone)]
