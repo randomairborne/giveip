@@ -82,16 +82,17 @@ fn get_ip(addr: SocketAddr, headers: &HeaderMap, state: AppState) -> Result<IpAd
 
 async fn nocors(request: Request, next: Next) -> Response {
     let mut response = next.run(request).await;
-    response
-        .headers_mut()
-        .insert("Access-Control-Allow-Origin", HeaderValue::from_static("*"));
+    response.headers_mut().insert(
+        "Access-Control-Allow-Origin",
+        HeaderValue::from_str("*").unwrap(),
+    );
     response
 }
 
 async fn noindex(req: Request, next: Next) -> Response {
     let mut resp = next.run(req).await;
-    let name = HeaderName::from_static("X-Robots-Tag");
-    let value = HeaderValue::from_static("noindex");
+    let name = HeaderName::from_str("X-Robots-Tag").unwrap();
+    let value = HeaderValue::from_str("noindex").unwrap();
     resp.headers_mut().insert(name, value);
     resp
 }
