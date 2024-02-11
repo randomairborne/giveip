@@ -80,20 +80,24 @@ fn get_ip(addr: SocketAddr, headers: &HeaderMap, state: AppState) -> Result<IpAd
     }
 }
 
+static CORS_STAR: HeaderValue = HeaderValue::from_static("*");
+
 async fn nocors(request: Request, next: Next) -> Response {
     let mut response = next.run(request).await;
     response.headers_mut().insert(
-        "Access-Control-Allow-Origin",
-        HeaderValue::from_str("*").unwrap(),
+        axum::http::header::ACCESS_CONTROL_ALLOW_ORIGIN,
+        CORS_STAR.clone(),
     );
     response
 }
 
+static ROBOTS_NAME: HeaderName = HeaderName::from_static("X-Robots-Tag");
+static ROBOTS_VALUE: HeaderValue = HeaderValue::from_static("noindex");
+
 async fn noindex(req: Request, next: Next) -> Response {
     let mut resp = next.run(req).await;
-    let name = HeaderName::from_str("X-Robots-Tag").unwrap();
-    let value = HeaderValue::from_str("noindex").unwrap();
-    resp.headers_mut().insert(name, value);
+    resp.headers_mut()
+        .insert(ROBOTS_NAME.clone(), ROBOTS_VALUE.clone());
     resp
 }
 
@@ -119,14 +123,18 @@ pub enum HtmlOrRaw {
     Raw(String),
 }
 
+static CACHE_CONTROL_VALUE: HeaderValue = HeaderValue::from_static("no-store");
+
 impl IntoResponse for HtmlOrRaw {
     fn into_response(self) -> Response {
         match self {
             Self::Html(v) => axum::response::Html(v).into_response(),
             Self::Raw(v) => {
                 let mut resp = v.into_response();
-                resp.headers_mut()
-                    .insert("Cache-Control", HeaderValue::from_str("no-store").unwrap());
+                resp.headers_mut().insert(
+                    axum::http::header::CACHE_CONTROL,
+                    CACHE_CONTROL_VALUE.clone(),
+                );
                 resp
             }
         }
