@@ -123,7 +123,12 @@ impl IntoResponse for HtmlOrRaw {
     fn into_response(self) -> Response {
         match self {
             Self::Html(v) => axum::response::Html(v).into_response(),
-            Self::Raw(v) => v.into_response(),
+            Self::Raw(v) => {
+                let mut resp = v.into_response();
+                resp.headers_mut()
+                    .insert("Cache-Control", HeaderValue::from_str("no-store").unwrap());
+                resp
+            }
         }
     }
 }
