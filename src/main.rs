@@ -91,7 +91,7 @@ async fn nocors(request: Request, next: Next) -> Response {
     response
 }
 
-static ROBOTS_NAME: HeaderName = HeaderName::from_static("X-Robots-Tag");
+static ROBOTS_NAME: HeaderName = HeaderName::from_static("x-robots-tag");
 static ROBOTS_VALUE: HeaderValue = HeaderValue::from_static("noindex");
 
 async fn noindex(req: Request, next: Next) -> Response {
