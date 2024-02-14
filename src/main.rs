@@ -6,6 +6,7 @@ use std::{
     sync::Arc,
 };
 
+use axum::http::header::{ACCESS_CONTROL_ALLOW_ORIGIN, CACHE_CONTROL};
 use axum::{
     extract::{ConnectInfo, Request, State},
     http::{HeaderMap, HeaderName, HeaderValue, StatusCode},
@@ -84,10 +85,9 @@ static CORS_STAR: HeaderValue = HeaderValue::from_static("*");
 
 async fn nocors(request: Request, next: Next) -> Response {
     let mut response = next.run(request).await;
-    response.headers_mut().insert(
-        axum::http::header::ACCESS_CONTROL_ALLOW_ORIGIN,
-        CORS_STAR.clone(),
-    );
+    response
+        .headers_mut()
+        .insert(ACCESS_CONTROL_ALLOW_ORIGIN, CORS_STAR.clone());
     response
 }
 
@@ -131,10 +131,8 @@ impl IntoResponse for HtmlOrRaw {
             Self::Html(v) => axum::response::Html(v).into_response(),
             Self::Raw(v) => {
                 let mut resp = v.into_response();
-                resp.headers_mut().insert(
-                    axum::http::header::CACHE_CONTROL,
-                    CACHE_CONTROL_VALUE.clone(),
-                );
+                resp.headers_mut()
+                    .insert(CACHE_CONTROL, CACHE_CONTROL_VALUE.clone());
                 resp
             }
         }
