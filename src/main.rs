@@ -50,7 +50,7 @@ async fn home(
     let accept = headers
         .get("Accept")
         .map_or("*/*", |x| x.to_str().unwrap_or("invalid header value"));
-    let ip = get_ip(sock_addr, &headers, state.clone())?;
+    let ip = get_ip(sock_addr, &headers, state)?;
     if accept.contains("text/html") {
         Ok(HtmlOrRaw::Html(include_str!("index.html")))
     } else {
@@ -64,7 +64,7 @@ async fn raw(
     headers: HeaderMap,
     State(state): State<AppState>,
 ) -> Result<String, Error> {
-    let ip = get_ip(sock_addr, &headers, state.clone())?;
+    let ip = get_ip(sock_addr, &headers, state)?;
     Ok(format!("{ip}\n"))
 }
 
