@@ -1,4 +1,5 @@
 # Terms of Service for giveip.io service
+
 You may use giveip.io for any legal reason or use case.
 However, you may not make attempts to degrade the service
 for other users, or to create exessive load. The service may
