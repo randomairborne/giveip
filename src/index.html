@@ -34,20 +34,16 @@
     <style>
       html,
       body {
-        padding: 10%;
+        height: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
       }
 
-      h1 {
-        font-size: 3vw;
-        height: 100%;
-        font-family: Arial, Verdana, Helvetica, sans-serif;
-      }
-
       .stack {
         display: inline;
+        font-size: max(5vh, 3vw);
+        font-family: Arial, Verdana, Helvetica, sans-serif;
       }
     </style>
   </head>
@@ -62,11 +58,13 @@
       </div>
     </div>
     <script>
+      const v4_endpoint = "https://v4.giveip.io/raw";
+      const v6_endpoint = "https://v6.giveip.io/raw";
       const ip4 = document.getElementById("ip4");
       const ip6 = document.getElementById("ip6");
       const ip4txt = document.getElementById("ip4txt");
       const ip6txt = document.getElementById("ip6txt");
-      fetch("https://v4.giveip.io/raw")
+      fetch(v4_endpoint)
         .then((req) => req.text())
         .then((resp) => {
           ip4.innerText = resp;
@@ -76,7 +74,7 @@
         .catch((failed) => {
           console.log("Request failed:" + failed);
         });
-      fetch("https://v6.giveip.io/raw")
+      fetch(v6_endpoint)
         .then((req) => req.text())
         .then((resp) => {
           ip6.innerText = resp;

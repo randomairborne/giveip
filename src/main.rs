@@ -13,34 +13,40 @@ use axum::{
     middleware::Next,
     response::{IntoResponse, Response},
     routing::{any, get},
+    Router,
 };
 use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() {
-    let addr = SocketAddr::from((
-        [0, 0, 0, 0],
-        std::env::var("PORT")
-            .unwrap_or_else(|_| 8080.to_string())
-            .parse::<u16>()
-            .unwrap_or(8080),
-    ));
+    let port = std::env::var("PORT")
+        .unwrap_or_else(|_| 8080.to_string())
+        .parse::<u16>()
+        .unwrap_or(8080);
+    let v4_addr = SocketAddr::from(([0; 4], port));
+    let v6_addr = SocketAddr::from(([0; 16], port));
     let client_ip_var = std::env::var("CLIENT_IP_HEADER").ok();
     let state = AppState::new(client_ip_var);
-    let app = axum::Router::new()
+    let app = Router::new()
         .route("/raw", any(raw))
         .layer(axum::middleware::from_fn(noindex))
         .route("/", get(home))
         .layer(axum::middleware::from_fn(nocors))
         .with_state(state.clone());
-    println!("Listening on http://{addr} for ip requests");
-    let tcp = TcpListener::bind(addr).await.unwrap();
+
+    println!("Listening on http://{v4_addr} and http://{v6_addr} for ip requests");
+    let tcp4 = TcpListener::bind(v4_addr).await.unwrap();
+    let tcp6 = TcpListener::bind(v6_addr).await.unwrap();
+
+    tokio::join!(svc(tcp4, app.clone()), svc(tcp6, app));
+}
+
+async fn svc(tcp: TcpListener, app: Router) {
     axum::serve(tcp, app.into_make_service_with_connect_info::<SocketAddr>())
         .with_graceful_shutdown(vss::shutdown_signal())
         .await
         .unwrap();
 }
-
 #[allow(clippy::unused_async)]
 async fn home(
     ConnectInfo(sock_addr): ConnectInfo<SocketAddr>,
