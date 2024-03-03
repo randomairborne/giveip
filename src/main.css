@@ -1,0 +1,13 @@
+html,
+body {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stack {
+  display: inline;
+  font-size: max(5vh, 3vw);
+  font-family: Arial, Verdana, Helvetica, sans-serif;
+}

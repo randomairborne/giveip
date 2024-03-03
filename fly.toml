@@ -9,51 +9,48 @@ kill_signal = "SIGINT"
 kill_timeout = "5s"
 
 [experimental]
-  auto_rollback = true
+auto_rollback = true
 
 [env]
-  CLIENT_IP_HEADER = "Fly-Client-IP"
+CLIENT_IP_HEADER = "Fly-Client-IP"
+ROOT_DNS_NAME = "giveip.io"
 
 [build]
-  image = "ghcr.io/randomairborne/giveip:latest"
-
-[metrics]
-  port = 9090
-  path = "/metrics"
+image = "ghcr.io/randomairborne/giveip:latest"
 
 [[services]]
-  protocol = "tcp"
-  internal_port = 8080
-  processes = ["app"]
+protocol = "tcp"
+internal_port = 8080
+processes = ["app"]
 
-  [[services.ports]]
-    port = 80
-    handlers = ["http"]
+[[services.ports]]
+port = 80
+handlers = ["http"]
 
-  [[services.ports]]
-    port = 443
-    handlers = ["tls", "http"]
+[[services.ports]]
+port = 443
+handlers = ["tls", "http"]
 
-  [services.concurrency]
-    type = "connections"
-    hard_limit = 25
-    soft_limit = 20
+[services.concurrency]
+type = "connections"
+hard_limit = 2500
+soft_limit = 2000
 
-  [[services.http_checks]]
-    interval = 10000
-    grace_period = "5s"
-    path = "/"
-    protocol = "http"
-    timeout = 2000
-    [services.http_checks.headers]
-      accept = "text/html"
-      Fly-Client-IP = "1.1.1.1"
+[[services.http_checks]]
+interval = 10000
+grace_period = "5s"
+path = "/"
+protocol = "http"
+timeout = 2000
+[services.http_checks.headers]
+accept = "text/html"
+Fly-Client-IP = "1.1.1.1"
 
-  [[services.http_checks]]
-    interval = 10000
-    grace_period = "5s"
-    path = "/raw"
-    protocol = "http"
-    timeout = 2000
-    [services.http_checks.headers]
-      Fly-Client-IP = "1.1.1.1"
+[[services.http_checks]]
+interval = 10000
+grace_period = "5s"
+path = "/raw"
+protocol = "http"
+timeout = 2000
+[services.http_checks.headers]
+Fly-Client-IP = "1.1.1.1"

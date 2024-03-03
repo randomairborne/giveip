@@ -14,6 +14,7 @@ axum = { version = "0.7", features = ["tokio", "http1", "http2"], default-featur
 tokio = { version = "1", features = ["rt-multi-thread", "signal", "macros", "net"] }
 thiserror = "1"
 vss = "0.1"
+tera = "1"
 
 [profile.release]
 lto = "fat"
