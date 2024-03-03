@@ -73,6 +73,7 @@ async fn home(
         } else {
             context.insert("ipv6", &ip.to_string());
         }
+        context.insert("https", &state.https);
         Ok(Ok(Html(state.tera.render("index.hbs", &context)?)))
     } else {
         Ok(Err(format!("{ip}\n")))
@@ -136,6 +137,7 @@ pub struct AppState {
     header: Option<Arc<HeaderName>>,
     tera: Arc<Tera>,
     root_dns_name: Arc<str>,
+    https: bool,
 }
 
 impl AppState {
@@ -148,6 +150,7 @@ impl AppState {
         let root_dns_name: Arc<str> = std::env::var("ROOT_DNS_NAME")
             .expect("Requires ROOT_DNS_NAME in environment")
             .into();
+        let https = std::env::var("NO_HTTPS").is_err();
         let mut tera = Tera::default();
         tera.autoescape_on(vec!["hbs", "html", "htm"]);
         tera.add_raw_template("index.hbs", include_str!("index.hbs"))
@@ -156,6 +159,7 @@ impl AppState {
             header: client_ip.map(|v| Arc::new(HeaderName::try_from(v).unwrap())),
             tera: Arc::new(tera),
             root_dns_name,
+            https,
         }
     }
 }

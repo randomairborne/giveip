@@ -1,3 +1,5 @@
+{% if https %} {% set scheme = "https" %} {% else %} {% set scheme = "http" %}
+{% endif %}
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -7,18 +9,19 @@
       id="root-dns-name"
       data-dns-name="{{root_dns_name}}"
     />
+    <meta name="scheme" id="scheme" data-scheme="{{scheme}}" />
     <link rel="stylesheet" href="/main.css" />
     <meta
       name="description"
       content="A simple, fast website to return your IPv4 and IPv6 addresses. No logs are kept. Free and open to all."
     />
     <meta property="og:title" content="GiveIP" />
-    <meta property="og:url" content="https://{{root_dns_name}}/" />
+    <meta property="og:url" content="{{scheme}}://{{root_dns_name}}/" />
     <meta
       property="og:description"
       content="A simple, fast website to return your IPv4 and IPv6 addresses. No logs are kept. Free and open to all."
     />
-    <link rel="canonical" href="https://{{root_dns_name}}/" />
+    <link rel="canonical" href="{{scheme}}://{{root_dns_name}}/" />
     <noscript>
       <meta http-equiv="refresh" content="0; url='/raw'" />
     </noscript>

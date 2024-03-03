@@ -8,6 +8,6 @@ body {
 
 .stack {
   display: inline;
-  font-size: max(5vh, 3vw);
+  font-size: 2vw;
   font-family: Arial, Verdana, Helvetica, sans-serif;
 }
