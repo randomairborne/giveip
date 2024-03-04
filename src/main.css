@@ -1,15 +1,17 @@
+* {
+  max-width: 100%;
+}
+
 html,
 body {
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  max-width: 100%;
 }
 
 .stack {
   display: inline;
   font-size: max(5vh, 3vw);
   font-family: Arial, Verdana, Helvetica, sans-serif;
-  max-width: 100%:
 }
