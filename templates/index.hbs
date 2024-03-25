@@ -1,8 +1,11 @@
+<!doctype html>
+{% set scheme %}
 {% if https %}
-  {% set scheme = "https" %}
+  {% let scheme = "https" %}
 {% else %}
-  {% set scheme = "http" %}
+  {% let scheme = "http" %}
 {% endif %}
+{% let description = "A simple, fast website to return your IPv4 and IPv6 addresses. No logs are kept. Free and open to all." %}
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -13,50 +16,46 @@
       data-dns-name="{{ root_dns_name }}"
     />
     <meta name="scheme" id="scheme" data-scheme="{{ scheme }}" />
-    <link rel="stylesheet" href="/main.css" />
-    <meta
-      name="description"
-      content="A simple, fast website to return your IPv4 and IPv6 addresses. No logs are kept. Free and open to all."
-    />
+    <link rel="stylesheet" href="{{ scheme }}://{{ root_dns_name }}/main.css" />
+    <meta name="description" content="{{ description }}" />
     <meta property="og:title" content="GiveIP" />
     <meta property="og:url" content="{{ scheme }}://{{ root_dns_name }}/" />
-    <meta
-      property="og:description"
-      content="A simple, fast website to return your IPv4 and IPv6 addresses. No logs are kept. Free and open to all."
-    />
+    <meta property="og:description" content="{{ description }}" />
     <link rel="canonical" href="{{ scheme }}://{{ root_dns_name }}/" />
     <noscript>
-      <meta http-equiv="refresh" content="0; url='/raw'" />
+      <meta
+        http-equiv="refresh"
+        content="0; url='{{ scheme }}://{{ root_dns_name }}/raw'"
+      />
     </noscript>
-    {% if ipv4 %}
+    {% match ip %}
+      {% when IpAddr::V4 with (ipv4) %}
       <title id="title">Your public IP is {{ ipv4 }}</title>
-    {% else %}
+      {% when IpAddr::V6 with (_) %}
       <title id="title">What's my IP?</title>
-    {% endif %}
+    {% endmatch %}
   </head>
 
   <body>
     <div class="stack">
-      {% if ipv4 %}
+      {% match ip %}
+        {% when IpAddr::V4 with (ipv4) %}
         <div id="ip4txt">
           Your public IPv4 is:&nbsp;<code id="ip4">{{ ipv4 }}</code>
         </div>
-      {% else %}
-        <div id="ip4txt" hidden>
-          Your public IPv4 is:&nbsp;<code id="ip4">(none)</code>
+        <div id="ip6txt" hidden>
+          Your public IPv6 is:&nbsp;<code id="ip6">(fetching)</code>
         </div>
-      {% endif %}
-      {% if ipv6 %}
+        {% when IpAddr::V6 with (ipv6) %}
+        <div id="ip4txt" hidden>
+          Your public IPv4 is:&nbsp;<code id="ip4">(fetching)</code>
+        </div>
         <div id="ip6txt">
           Your public IPv6 is:&nbsp;<code id="ip6">{{ ipv6 }}</code>
         </div>
-      {% else %}
-        <div id="ip6txt" hidden>
-          Your public IPv6 is:&nbsp;<code id="ip6">(none)</code>
-        </div>
-      {% endif %}
+      {% endmatch %}
     </div>
-    <script src="/main.js"></script>
+    <script src="{{ scheme }}://{{ root_dns_name }}/main.js"></script>
 
     <script
       defer

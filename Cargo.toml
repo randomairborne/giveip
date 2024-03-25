@@ -11,10 +11,12 @@ description = "A simple hyper http server to echo back IP addresses"
 
 [dependencies]
 axum = { version = "0.7", features = ["tokio", "http1", "http2"], default-features = false }
-tokio = { version = "1", features = ["rt-multi-thread", "signal", "macros", "net"] }
+askama = { version = "0.12", features = ["with-axum"], default-features = false }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+askama_axum = { version = "0.4", default-features = false }
+valk-utils = "0.1"
 thiserror = "1"
 vss = "0.1"
-tera = "1"
 
 [profile.release]
 lto = "fat"

@@ -7,6 +7,7 @@ use std::{
     sync::Arc,
 };
 
+use askama::Template;
 use axum::{
     extract::{ConnectInfo, FromRequestParts, Request, State},
     http::{
@@ -19,15 +20,11 @@ use axum::{
     routing::{any, get},
     Router,
 };
-use tera::{Context, Tera};
 use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() {
-    let port = std::env::var("PORT")
-        .unwrap_or_else(|_| 8080.to_string())
-        .parse::<u16>()
-        .unwrap_or(8080);
+    let port: u16 = valk_utils::parse_var("PORT");
     let v6_addr = SocketAddr::V6(SocketAddrV6::new(Ipv6Addr::UNSPECIFIED, port, 0, 0));
 
     let state = AppState::new();
@@ -56,25 +53,35 @@ async fn svc(tcp: TcpListener, app: Router) {
         .unwrap();
 }
 
+#[derive(Template)]
+#[template(
+    path = "index.hbs",
+    escape = "html",
+    whitespace = "suppress",
+    ext = "html"
+)]
+pub struct IndexPage {
+    root_dns_name: Arc<str>,
+    ip: IpAddr,
+    https: bool,
+}
+
 #[allow(clippy::unused_async)]
 async fn home(
     IpAddress(ip): IpAddress,
     headers: HeaderMap,
     State(state): State<AppState>,
-) -> Result<Result<Html<String>, String>, Error> {
+) -> Result<Result<IndexPage, String>, Error> {
     let accept = headers
         .get("Accept")
         .map_or("*/*", |x| x.to_str().unwrap_or("invalid header value"));
     if accept.contains("text/html") {
-        let mut context = Context::new();
-        context.insert("root_dns_name", state.root_dns_name.as_ref());
-        if ip.is_ipv4() {
-            context.insert("ipv4", &ip.to_string());
-        } else {
-            context.insert("ipv6", &ip.to_string());
-        }
-        context.insert("https", &state.https);
-        Ok(Ok(Html(state.tera.render("index.hbs", &context)?)))
+        let page = IndexPage {
+            root_dns_name: state.root_dns_name,
+            ip,
+            https: state.https,
+        };
+        Ok(Ok(page))
     } else {
         Ok(Err(format!("{ip}\n")))
     }
@@ -135,7 +142,6 @@ async fn noindex(req: Request, next: Next) -> Response {
 #[derive(Clone)]
 pub struct AppState {
     header: Option<Arc<HeaderName>>,
-    tera: Arc<Tera>,
     root_dns_name: Arc<str>,
     https: bool,
 }
@@ -146,18 +152,11 @@ impl AppState {
     /// This function can panic when its hardcoded values are invalid
     /// or the passed `client_ip_name` is not a valid header name
     pub fn new() -> Self {
-        let client_ip = std::env::var("CLIENT_IP_HEADER").ok();
-        let root_dns_name: Arc<str> = std::env::var("ROOT_DNS_NAME")
-            .expect("Requires ROOT_DNS_NAME in environment")
-            .into();
-        let https = std::env::var("NO_HTTPS").is_err();
-        let mut tera = Tera::default();
-        tera.autoescape_on(vec!["hbs", "html", "htm"]);
-        tera.add_raw_template("index.hbs", include_str!("index.hbs"))
-            .unwrap();
+        let client_ip = valk_utils::get_var("CLIENT_IP_HEADER").ok();
+        let root_dns_name: Arc<str> = valk_utils::get_var("ROOT_DNS_NAME").into();
+        let https = valk_utils::get_var("NO_HTTPS").is_err();
         Self {
             header: client_ip.map(|v| Arc::new(HeaderName::try_from(v).unwrap())),
-            tera: Arc::new(tera),
             root_dns_name,
             https,
         }
@@ -209,8 +208,6 @@ pub enum Error {
     NoHeader,
     #[error("Could not extract connection info")]
     ConnectInfo,
-    #[error("Templating error")]
-    Tera(#[from] tera::Error),
     #[error("Could not convert supplied header to string (this is a configuration issue)")]
     ToStr(#[from] axum::http::header::ToStrError),
     #[error("Could not convert supplied header to IP address (this is a configuration issue)")]
