@@ -233,7 +233,6 @@ dependencies = [
  "axum",
  "thiserror",
  "tokio",
- "valk-utils",
  "vss",
 ]
 
@@ -729,12 +728,6 @@ name = "unicode-ident"
 version = "1.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
-
-[[package]]
-name = "valk-utils"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5c165034f733b7f8e2f92c8064173b6fbd72144429d62904942772a25873bf6"
 
 [[package]]
 name = "version_check"

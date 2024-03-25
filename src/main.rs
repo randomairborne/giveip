@@ -24,7 +24,7 @@ use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() {
-    let port: u16 = valk_utils::parse_var("PORT");
+    let port: u16 = std::env::var("PORT").map_or(8080, |v| v.parse().expect("Invalid PORT"));
     let v6_addr = SocketAddr::V6(SocketAddrV6::new(Ipv6Addr::UNSPECIFIED, port, 0, 0));
 
     let state = AppState::new();
@@ -153,7 +153,9 @@ impl AppState {
     /// or the passed `client_ip_name` is not a valid header name
     pub fn new() -> Self {
         let client_ip = std::env::var("CLIENT_IP_HEADER").ok();
-        let root_dns_name: Arc<str> = valk_utils::get_var("ROOT_DNS_NAME").into();
+        let root_dns_name: Arc<str> = std::env::var("ROOT_DNS_NAME")
+            .expect("No ROOT_DNS_NAME in env")
+            .into();
         let https = std::env::var("NO_HTTPS").is_err();
         Self {
             header: client_ip.map(|v| Arc::new(HeaderName::try_from(v).unwrap())),
