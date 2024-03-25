@@ -22,12 +22,6 @@
     <meta property="og:url" content="{{ scheme }}://{{ root_dns_name }}/" />
     <meta property="og:description" content="{{ description }}" />
     <link rel="canonical" href="{{ scheme }}://{{ root_dns_name }}/" />
-    <noscript>
-      <meta
-        http-equiv="refresh"
-        content="0; url='{{ scheme }}://{{ root_dns_name }}/raw'"
-      />
-    </noscript>
     {% match ip %}
       {% when IpAddr::V4 with (ipv4) %}
       <title id="title">Your public IP is {{ ipv4 }}</title>
