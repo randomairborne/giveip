@@ -1,4 +1,7 @@
-{% if https %} {% set scheme = "https" %} {% else %} {% set scheme = "http" %}
+{% if https %}
+  {% set scheme = "https" %}
+{% else %}
+  {% set scheme = "http" %}
 {% endif %}
 <html lang="en">
   <head>
@@ -7,59 +10,58 @@
     <meta
       name="root-dns-name"
       id="root-dns-name"
-      data-dns-name="{{root_dns_name}}"
+      data-dns-name="{{ root_dns_name }}"
     />
-    <meta name="scheme" id="scheme" data-scheme="{{scheme}}" />
+    <meta name="scheme" id="scheme" data-scheme="{{ scheme }}" />
     <link rel="stylesheet" href="/main.css" />
     <meta
       name="description"
       content="A simple, fast website to return your IPv4 and IPv6 addresses. No logs are kept. Free and open to all."
     />
     <meta property="og:title" content="GiveIP" />
-    <meta property="og:url" content="{{scheme}}://{{root_dns_name}}/" />
+    <meta property="og:url" content="{{ scheme }}://{{ root_dns_name }}/" />
     <meta
       property="og:description"
       content="A simple, fast website to return your IPv4 and IPv6 addresses. No logs are kept. Free and open to all."
     />
-    <link rel="canonical" href="{{scheme}}://{{root_dns_name}}/" />
+    <link rel="canonical" href="{{ scheme }}://{{ root_dns_name }}/" />
     <noscript>
       <meta http-equiv="refresh" content="0; url='/raw'" />
     </noscript>
     {% if ipv4 %}
-    <title id="title">Your public IP is {{ipv4}}</title>
+      <title id="title">Your public IP is {{ ipv4 }}</title>
     {% else %}
-    <title id="title">What's my IP?</title>
+      <title id="title">What's my IP?</title>
     {% endif %}
   </head>
 
   <body>
     <div class="stack">
       {% if ipv4 %}
-      <div id="ip4txt">
-        Your public IPv4 is:&nbsp;<code id="ip4">{{ipv4}}</code>
-      </div>
+        <div id="ip4txt">
+          Your public IPv4 is:&nbsp;<code id="ip4">{{ ipv4 }}</code>
+        </div>
       {% else %}
-      <div id="ip4txt" hidden>
-        Your public IPv4 is:&nbsp;<code id="ip4">(none)</code>
-      </div>
-      {% endif %} {% if ipv6 %}
-      <div id="ip6txt">
-        Your public IPv6 is:&nbsp;<code id="ip6">{{ipv6}}</code>
-      </div>
+        <div id="ip4txt" hidden>
+          Your public IPv4 is:&nbsp;<code id="ip4">(none)</code>
+        </div>
+      {% endif %}
+      {% if ipv6 %}
+        <div id="ip6txt">
+          Your public IPv6 is:&nbsp;<code id="ip6">{{ ipv6 }}</code>
+        </div>
       {% else %}
-      <div id="ip6txt" hidden>
-        Your public IPv6 is:&nbsp;<code id="ip6">(none)</code>
-      </div>
+        <div id="ip6txt" hidden>
+          Your public IPv6 is:&nbsp;<code id="ip6">(none)</code>
+        </div>
       {% endif %}
     </div>
-
     <script src="/main.js"></script>
-    <!-- Cloudflare Web Analytics -->
+
     <script
       defer
       src="https://static.cloudflareinsights.com/beacon.min.js"
       data-cf-beacon='{"token": "872609be4c924b219e5de38a6e0b26a0"}'
     ></script>
-    <!-- End Cloudflare Web Analytics -->
   </body>
 </html>
