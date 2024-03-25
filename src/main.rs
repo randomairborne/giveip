@@ -152,7 +152,7 @@ impl AppState {
     /// This function can panic when its hardcoded values are invalid
     /// or the passed `client_ip_name` is not a valid header name
     pub fn new() -> Self {
-        let client_ip = valk_utils::get_var("CLIENT_IP_HEADER");
+        let client_ip = std::env::var("CLIENT_IP_HEADER").ok();
         let root_dns_name: Arc<str> = valk_utils::get_var("ROOT_DNS_NAME").into();
         let https = std::env::var("NO_HTTPS").is_err();
         Self {
