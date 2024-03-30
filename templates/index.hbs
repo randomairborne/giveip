@@ -1,67 +1,81 @@
 <!doctype html>
 {% set scheme %}
 {% if https %}
-{% let scheme = "https" %}
+  {% let scheme = "https" %}
 {% else %}
-{% let scheme = "http" %}
+  {% let scheme = "http" %}
 {% endif %}
 {% let description = "A simple, fast website to return your IPv4 and IPv6 addresses. No logs are kept. Free and open to all." %}
 <html lang="en">
-<head>
-    <meta charset="UTF-8"/>
-    <link rel="preload" href="{{ scheme }}://{{ root_dns_name }}/main.js" as="script"/>
-    {% match ip %}
-    {% when IpAddr::V4 with (_) %}
-    <link rel="preload" href="{{ scheme }}://v6.{{ root_dns_name }}/raw" as="fetch" crossorigin="anonymous"/>
-    {% when IpAddr::V6 with (_) %}
-    <link rel="preload" href="{{ scheme }}://v4.{{ root_dns_name }}/raw" as="fetch" crossorigin="anonymous"/>
-    {% endmatch %}
-    <link rel="stylesheet" href="{{ scheme }}://{{ root_dns_name }}/main.css"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <meta
-            name="root-dns-name"
-            id="root-dns-name"
-            data-dns-name="{{ root_dns_name }}"
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      rel="preload"
+      href="{{ scheme }}://{{ root_dns_name }}/main.js"
+      as="script"
     />
-    <meta name="scheme" id="scheme" data-scheme="{{ scheme }}"/>
-    <meta name="description" content="{{ description }}"/>
-    <meta property="og:title" content="GiveIP"/>
-    <meta property="og:url" content="{{ scheme }}://{{ root_dns_name }}/"/>
-    <meta property="og:description" content="{{ description }}"/>
-    <link rel="canonical" href="{{ scheme }}://{{ root_dns_name }}/"/>
     {% match ip %}
-    {% when IpAddr::V4 with (ipv4) %}
-    <title id="title">Your public IP is {{ ipv4 }}</title>
-    {% when IpAddr::V6 with (_) %}
-    <title id="title">What's my IP?</title>
+      {% when IpAddr::V4 with (_) %}
+      <link
+        rel="preload"
+        href="{{ scheme }}://v6.{{ root_dns_name }}/raw"
+        as="fetch"
+        crossorigin="anonymous"
+      />
+      {% when IpAddr::V6 with (_) %}
+      <link
+        rel="preload"
+        href="{{ scheme }}://v4.{{ root_dns_name }}/raw"
+        as="fetch"
+        crossorigin="anonymous"
+      />
     {% endmatch %}
-</head>
-
-<body>
-<div class="stack">
+    <link rel="stylesheet" href="{{ scheme }}://{{ root_dns_name }}/main.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="root-dns-name"
+      id="root-dns-name"
+      data-dns-name="{{ root_dns_name }}"
+    />
+    <meta name="scheme" id="scheme" data-scheme="{{ scheme }}" />
+    <meta name="description" content="{{ description }}" />
+    <meta property="og:title" content="GiveIP" />
+    <meta property="og:url" content="{{ scheme }}://{{ root_dns_name }}/" />
+    <meta property="og:description" content="{{ description }}" />
+    <link rel="canonical" href="{{ scheme }}://{{ root_dns_name }}/" />
     {% match ip %}
-    {% when IpAddr::V4 with (ipv4) %}
-    <div id="ip4txt">
-        Your public IPv4 is: <code id="ip4">{{ ipv4 }}</code>
-    </div>
-    <div id="ip6txt" hidden>
-        Your public IPv6 is: <code id="ip6">(fetching)</code>
-    </div>
-    {% when IpAddr::V6 with (ipv6) %}
-    <div id="ip4txt" hidden>
-        Your public IPv4 is: <code id="ip4">(fetching)</code>
-    </div>
-    <div id="ip6txt">
-        Your public IPv6 is: <code id="ip6">{{ ipv6 }}</code>
-    </div>
+      {% when IpAddr::V4 with (ipv4) %}
+      <title id="title">Your public IP is {{ ipv4 }}</title>
+      {% when IpAddr::V6 with (_) %}
+      <title id="title">What's my IP?</title>
     {% endmatch %}
-</div>
-<script src="{{ scheme }}://{{ root_dns_name }}/main.js"></script>
+  </head>
 
-<script
-        defer
-        src="https://static.cloudflareinsights.com/beacon.min.js"
-        data-cf-beacon='{"token": "872609be4c924b219e5de38a6e0b26a0"}'
-></script>
-</body>
+  <body>
+    <div class="stack">
+      {% match ip %}
+        {% when IpAddr::V4 with (ipv4) %}
+        <div id="ip4txt">
+          Your public IPv4 is: <code id="ip4">{{ ipv4 }}</code>
+        </div>
+        <div id="ip6txt" hidden>
+          Your public IPv6 is: <code id="ip6">(fetching)</code>
+        </div>
+        {% when IpAddr::V6 with (ipv6) %}
+        <div id="ip4txt" hidden>
+          Your public IPv4 is: <code id="ip4">(fetching)</code>
+        </div>
+        <div id="ip6txt">
+          Your public IPv6 is: <code id="ip6">{{ ipv6 }}</code>
+        </div>
+      {% endmatch %}
+    </div>
+    <script src="{{ scheme }}://{{ root_dns_name }}/main.js"></script>
+
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "872609be4c924b219e5de38a6e0b26a0"}'
+    ></script>
+  </body>
 </html>
