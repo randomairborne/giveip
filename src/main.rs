@@ -61,12 +61,7 @@ async fn svc(tcp: TcpListener, app: Router) {
 }
 
 #[derive(Template)]
-#[template(
-    path = "index.hbs",
-    escape = "html",
-    whitespace = "suppress",
-    ext = "html"
-)]
+#[template(path = "index.hbs", escape = "html", ext = "html")]
 pub struct IndexPage {
     root_dns_name: Arc<str>,
     ip: IpAddr,
