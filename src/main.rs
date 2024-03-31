@@ -21,6 +21,7 @@ use axum::{
     Router,
 };
 use tokio::net::TcpListener;
+use tower::ServiceBuilder;
 
 #[tokio::main]
 async fn main() {
@@ -33,15 +34,21 @@ async fn main() {
         .route("/main.js", get(js))
         .layer(axum::middleware::from_fn(noindex));
     let app = Router::new()
-        .route("/raw", any(raw))
-        .layer(axum::middleware::from_fn(noindex))
-        .route("/", get(home))
-        .layer(axum::middleware::from_fn(nocors_nocache))
+        .route("/", get(home).layer(axum::middleware::from_fn(nocache)))
+        .route(
+            "/raw",
+            any(raw).layer(
+                ServiceBuilder::new()
+                    .layer(axum::middleware::from_fn(noindex))
+                    .layer(axum::middleware::from_fn(nocors))
+                    .layer(axum::middleware::from_fn(nocache)),
+            ),
+        )
         .merge(statics)
         .fallback(not_found)
         .with_state(state.clone());
 
-    println!("Listening on http://localhost:{port} and http://{v6_addr} for ip requests");
+    println!("Listening on http://localhost:{port} and http://{v6_addr}:{port} for ip requests");
     let tcp6 = TcpListener::bind(v6_addr).await.unwrap();
     svc(tcp6, app).await;
 }
@@ -115,14 +122,10 @@ async fn not_found() -> Html<&'static str> {
     Html(include_str!("404.html"))
 }
 
-async fn nocors_nocache(request: Request, next: Next) -> Response {
-    static CORS_STAR: HeaderValue = HeaderValue::from_static("*");
+async fn nocache(request: Request, next: Next) -> Response {
     static CACHE_CONTROL_VALUE: HeaderValue = HeaderValue::from_static("no-store");
 
     let mut response = next.run(request).await;
-    response
-        .headers_mut()
-        .insert(ACCESS_CONTROL_ALLOW_ORIGIN, CORS_STAR.clone());
     response
         .headers_mut()
         .insert(CACHE_CONTROL, CACHE_CONTROL_VALUE.clone());
@@ -136,6 +139,16 @@ async fn noindex(req: Request, next: Next) -> Response {
     let mut resp = next.run(req).await;
     resp.headers_mut()
         .insert(ROBOTS_NAME.clone(), ROBOTS_VALUE.clone());
+    resp
+}
+
+async fn nocors(req: Request, next: Next) -> Response {
+    static CORS_STAR: HeaderValue = HeaderValue::from_static("*");
+
+    let mut resp = next.run(req).await;
+
+    resp.headers_mut()
+        .insert(ACCESS_CONTROL_ALLOW_ORIGIN, CORS_STAR.clone());
     resp
 }
 
