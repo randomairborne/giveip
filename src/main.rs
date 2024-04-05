@@ -13,7 +13,7 @@ use axum::{
     http::{
         header::{ACCESS_CONTROL_ALLOW_ORIGIN, CACHE_CONTROL, CONTENT_TYPE},
         request::Parts,
-        HeaderMap, HeaderName, HeaderValue, StatusCode,
+        HeaderName, HeaderValue, StatusCode,
     },
     middleware::Next,
     response::{Html, IntoResponse, Response},
@@ -71,17 +71,15 @@ pub struct IndexPage {
 #[allow(clippy::unused_async)]
 async fn home(
     IpAddress(ip): IpAddress,
-    headers: HeaderMap,
+    XForwardedSsl(https): XForwardedSsl,
+    Accept(accept): Accept,
     State(state): State<AppState>,
 ) -> Result<Result<IndexPage, String>, Error> {
-    let accept = headers
-        .get("Accept")
-        .map_or("*/*", |x| x.to_str().unwrap_or("invalid header value"));
     if accept.contains("text/html") {
         let page = IndexPage {
             root_dns_name: state.root_dns_name,
             ip,
-            https: state.https,
+            https,
         };
         Ok(Ok(page))
     } else {
@@ -151,7 +149,6 @@ async fn nocors(req: Request, next: Next) -> Response {
 pub struct AppState {
     header: Option<Arc<HeaderName>>,
     root_dns_name: Arc<str>,
-    https: bool,
 }
 
 impl AppState {
@@ -164,11 +161,9 @@ impl AppState {
         let root_dns_name: Arc<str> = std::env::var("ROOT_DNS_NAME")
             .expect("No ROOT_DNS_NAME in env")
             .into();
-        let https = std::env::var("NO_HTTPS").is_err();
         Self {
             header: client_ip.map(|v| Arc::new(HeaderName::try_from(v).unwrap())),
             root_dns_name,
-            https,
         }
     }
 }
@@ -208,6 +203,42 @@ impl FromRequestParts<AppState> for IpAddress {
                 .await
                 .map_err(|_| Error::ConnectInfo)?;
             Ok(Self(conn_info.0.ip()))
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct XForwardedSsl(bool);
+
+#[axum::async_trait]
+impl<S> FromRequestParts<S> for XForwardedSsl {
+    type Rejection = Error;
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        let has_ssl = match parts
+            .headers
+            .get("X-Forwarded-SSL")
+            .map(HeaderValue::as_bytes)
+        {
+            Some(b"on") => true,
+            _ => false,
+        };
+        Ok(Self(has_ssl))
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Accept(String);
+
+#[axum::async_trait]
+impl<S> FromRequestParts<S> for Accept {
+    type Rejection = Error;
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        if let Some(v) = parts.headers.get("Accept") {
+            Ok(Self(v.to_str().unwrap_or("").to_string()))
+        } else {
+            Ok(Self(String::new()))
         }
     }
 }
