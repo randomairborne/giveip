@@ -48,7 +48,7 @@ async fn main() {
         .fallback(not_found)
         .with_state(state.clone());
 
-    println!("Listening on http://localhost:{port} and http://{v6_addr}:{port} for ip requests");
+    println!("Listening on http://localhost:{port} and http://{v6_addr} for ip requests");
     let tcp6 = TcpListener::bind(v6_addr).await.unwrap();
     svc(tcp6, app).await;
 }
