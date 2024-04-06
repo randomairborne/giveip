@@ -1,4 +1,5 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+#![allow(clippy::useless_let_if_seq)]
 
 use std::{
     fmt::{Display, Formatter},
@@ -215,14 +216,11 @@ impl<S> FromRequestParts<S> for XForwardedSsl {
     type Rejection = Error;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        let has_ssl = match parts
+        let header_bytes = parts
             .headers
             .get("X-Forwarded-SSL")
-            .map(HeaderValue::as_bytes)
-        {
-            Some(b"on") => true,
-            _ => false,
-        };
+            .map(HeaderValue::as_bytes);
+        let has_ssl = matches!(header_bytes, Some(b"on"));
         Ok(Self(has_ssl))
     }
 }
@@ -235,11 +233,10 @@ impl<S> FromRequestParts<S> for Accept {
     type Rejection = Error;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        if let Some(v) = parts.headers.get("Accept") {
-            Ok(Self(v.to_str().unwrap_or("").to_string()))
-        } else {
-            Ok(Self(String::new()))
-        }
+        parts.headers.get("Accept").map_or_else(
+            || Ok(Self(String::new())),
+            |v| Ok(Self(v.to_str().unwrap_or("").to_string())),
+        )
     }
 }
 
