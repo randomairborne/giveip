@@ -34,16 +34,16 @@ async fn main() {
         .route("/main.js", get(js))
         .layer(axum::middleware::from_fn(noindex));
     let app = Router::new()
-        .route("/", get(home).layer(axum::middleware::from_fn(nocache)))
+        .route("/", get(home))
         .route(
             "/raw",
             any(raw).layer(
                 ServiceBuilder::new()
                     .layer(axum::middleware::from_fn(noindex))
-                    .layer(axum::middleware::from_fn(nocors))
-                    .layer(axum::middleware::from_fn(nocache)),
+                    .layer(axum::middleware::from_fn(nocors)),
             ),
         )
+        .layer(axum::middleware::from_fn(nocache))
         .merge(statics)
         .fallback(not_found)
         .with_state(state.clone());
