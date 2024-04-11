@@ -1,38 +1,32 @@
 <!doctype html>
-{%- set scheme -%}
-{%- if https -%}
-  {%- let scheme = "https" -%}
-{%- else -%}
-  {%- let scheme = "http" -%}
-{%- endif -%}
 {%- let description = "A simple, fast website to return your IPv4 and IPv6 addresses. No logs are kept. Free and open to all." -%}
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link
       rel="preload"
-      href="{{ scheme }}://{{ root_dns_name }}/main.js?cb={{ "/main.js"|bust_dir(cb) }}"
+      href="{{ proto }}://{{ root_dns_name }}/main.js?cb={{ "/main.js"|bust_dir(cb) }}"
       as="script"
     />
     {%- match ip -%}
       {%- when IpAddr::V4 with (_) -%}
       <link
         rel="preload"
-        href="{{ scheme }}://v6.{{ root_dns_name }}/raw"
+        href="{{ proto }}://v6.{{ root_dns_name }}/raw"
         as="fetch"
         crossorigin="anonymous"
       />
       {%- when IpAddr::V6 with (_) -%}
       <link
         rel="preload"
-        href="{{ scheme }}://v4.{{ root_dns_name }}/raw"
+        href="{{ proto }}://v4.{{ root_dns_name }}/raw"
         as="fetch"
         crossorigin="anonymous"
       />
     {%- endmatch -%}
     <link
       rel="stylesheet"
-      href="{{ scheme }}://{{ root_dns_name }}/main.css?cb={{ "/main.css"|bust_dir(cb) }}"
+      href="{{ proto }}://{{ root_dns_name }}/main.css?cb={{ "/main.css"|bust_dir(cb) }}"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
@@ -40,12 +34,12 @@
       id="root-dns-name"
       data-dns-name="{{ root_dns_name }}"
     />
-    <meta name="scheme" id="scheme" data-scheme="{{ scheme }}" />
+    <meta name="scheme" id="scheme" data-scheme="{{ proto }}" />
     <meta name="description" content="{{ description }}" />
     <meta property="og:title" content="GiveIP" />
-    <meta property="og:url" content="{{ scheme }}://{{ root_dns_name }}/" />
+    <meta property="og:url" content="{{ proto }}://{{ root_dns_name }}/" />
     <meta property="og:description" content="{{ description }}" />
-    <link rel="canonical" href="{{ scheme }}://{{ root_dns_name }}/" />
+    <link rel="canonical" href="https://{{ root_dns_name }}/" />
     {%- match ip -%}
       {%- when IpAddr::V4 with (ipv4) -%}
       <title id="title">Your public IP is {{ ipv4 }}</title>
@@ -56,7 +50,7 @@
 
   <body>
     <script
-      src="{{ scheme }}://{{ root_dns_name }}/main.js?cb={{ "/main.js"|bust_dir(cb) }}"
+      src="{{ proto }}://{{ root_dns_name }}/main.js?cb={{ "/main.js"|bust_dir(cb) }}"
       defer
     ></script>
     <script

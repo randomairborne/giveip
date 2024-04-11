@@ -76,7 +76,7 @@ pub struct IndexPage {
     root_dns_name: Arc<str>,
     cb: Arc<BustDir>,
     ip: IpAddr,
-    https: bool,
+    proto: String,
 }
 
 #[derive(Template)]
@@ -88,7 +88,7 @@ pub struct NotFoundPage {
 #[allow(clippy::unused_async)]
 async fn home(
     IpAddress(ip): IpAddress,
-    XForwardedSsl(https): XForwardedSsl,
+    XForwardedProto(proto): XForwardedProto,
     Accept(accept): Accept,
     State(state): State<AppState>,
 ) -> Result<Result<IndexPage, String>, Error> {
@@ -97,7 +97,7 @@ async fn home(
             root_dns_name: state.root_dns_name,
             cb: state.cb,
             ip,
-            https,
+            proto,
         };
         Ok(Ok(page))
     } else {
@@ -223,19 +223,21 @@ impl FromRequestParts<AppState> for IpAddress {
 }
 
 #[derive(Clone, Debug)]
-pub struct XForwardedSsl(bool);
+pub struct XForwardedProto(pub String);
 
 #[axum::async_trait]
-impl<S> FromRequestParts<S> for XForwardedSsl {
+impl<S> FromRequestParts<S> for XForwardedProto {
     type Rejection = Error;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        let header_bytes = parts
+        let proto = parts
             .headers
-            .get("X-Forwarded-SSL")
-            .map(HeaderValue::as_bytes);
-        let has_ssl = matches!(header_bytes, Some(b"on"));
-        Ok(Self(has_ssl))
+            .get("X-Forwarded-Proto")
+            .map(HeaderValue::to_str)
+            .and_then(Result::ok)
+            .unwrap_or("http")
+            .to_owned();
+        Ok(Self(proto))
     }
 }
 
