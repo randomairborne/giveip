@@ -11,7 +11,7 @@
     <meta charset="UTF-8" />
     <link
       rel="preload"
-      href="{{ scheme }}://{{ root_dns_name }}/main.js"
+      href="{{ scheme }}://{{ root_dns_name }}/main.js?cb={{ "/main.js"|bust_dir(cb) }}"
       as="script"
     />
     {%- match ip -%}
@@ -30,7 +30,10 @@
         crossorigin="anonymous"
       />
     {%- endmatch -%}
-    <link rel="stylesheet" href="{{ scheme }}://{{ root_dns_name }}/main.css" />
+    <link
+      rel="stylesheet"
+      href="{{ scheme }}://{{ root_dns_name }}/main.css?cb={{ "/main.css"|bust_dir(cb) }}"
+    />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="root-dns-name"
@@ -52,7 +55,10 @@
   </head>
 
   <body>
-    <script src="{{ scheme }}://{{ root_dns_name }}/main.js" defer></script>
+    <script
+      src="{{ scheme }}://{{ root_dns_name }}/main.js?cb={{ "/main.js"|bust_dir(cb) }}"
+      defer
+    ></script>
     <script
       defer
       src="https://static.cloudflareinsights.com/beacon.min.js"

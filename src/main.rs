@@ -11,18 +11,25 @@ use std::{
 use askama::Template;
 use axum::{
     extract::{ConnectInfo, FromRequestParts, Request, State},
+    handler::Handler,
     http::{
-        header::{ACCESS_CONTROL_ALLOW_ORIGIN, CACHE_CONTROL, CONTENT_TYPE},
+        header::{ACCESS_CONTROL_ALLOW_ORIGIN, CACHE_CONTROL},
         request::Parts,
         HeaderName, HeaderValue, StatusCode,
     },
     middleware::Next,
-    response::{Html, IntoResponse, Response},
+    response::{IntoResponse, Response},
     routing::{any, get},
     Router,
 };
+use bustdir::BustDir;
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
+use tower_http::services::ServeDir;
+
+mod filters {
+    pub use bustdir::askama::bust_dir;
+}
 
 #[tokio::main]
 async fn main() {
@@ -30,10 +37,13 @@ async fn main() {
     let v6_addr = SocketAddr::V6(SocketAddrV6::new(Ipv6Addr::UNSPECIFIED, port, 0, 0));
 
     let state = AppState::new();
-    let statics = Router::new()
-        .route("/main.css", get(css))
-        .route("/main.js", get(js))
-        .layer(axum::middleware::from_fn(noindex));
+
+    let serve_dir = ServeDir::new("assets").fallback(not_found.with_state(state.clone()));
+    let assets = ServiceBuilder::new()
+        .layer(axum::middleware::from_fn(noindex))
+        .layer(axum::middleware::from_fn(infinicache))
+        .service(serve_dir);
+
     let app = Router::new()
         .route("/", get(home))
         .route(
@@ -45,8 +55,7 @@ async fn main() {
             ),
         )
         .layer(axum::middleware::from_fn(nocache))
-        .merge(statics)
-        .fallback(not_found)
+        .fallback_service(assets)
         .with_state(state.clone());
 
     println!("Listening on http://localhost:{port} and http://{v6_addr} for ip requests");
@@ -65,8 +74,15 @@ async fn svc(tcp: TcpListener, app: Router) {
 #[template(path = "index.hbs", escape = "html", ext = "html")]
 pub struct IndexPage {
     root_dns_name: Arc<str>,
+    cb: Arc<BustDir>,
     ip: IpAddr,
     https: bool,
+}
+
+#[derive(Template)]
+#[template(path = "404.hbs", escape = "html", ext = "html")]
+pub struct NotFoundPage {
+    cb: Arc<BustDir>,
 }
 
 #[allow(clippy::unused_async)]
@@ -79,6 +95,7 @@ async fn home(
     if accept.contains("text/html") {
         let page = IndexPage {
             root_dns_name: state.root_dns_name,
+            cb: state.cb,
             ip,
             https,
         };
@@ -94,35 +111,17 @@ async fn raw(IpAddress(ip): IpAddress) -> Result<String, Error> {
 }
 
 #[allow(clippy::unused_async)]
-async fn css() -> ([(HeaderName, HeaderValue); 1], &'static str) {
-    static CSS_CONTENT_TYPE: HeaderValue = HeaderValue::from_static("text/css;charset=UTF-8");
-    (
-        [(CONTENT_TYPE, CSS_CONTENT_TYPE.clone())],
-        include_str!("main.css"),
-    )
-}
-
-#[allow(clippy::unused_async)]
-async fn js() -> ([(HeaderName, HeaderValue); 1], &'static str) {
-    static JS_CONTENT_TYPE: HeaderValue = HeaderValue::from_static("text/javascript;charset=UTF-8");
-    (
-        [(CONTENT_TYPE, JS_CONTENT_TYPE.clone())],
-        include_str!("main.js"),
-    )
-}
-
-#[allow(clippy::unused_async)]
-async fn not_found() -> Html<&'static str> {
-    Html(include_str!("404.html"))
+async fn not_found(State(state): State<AppState>) -> NotFoundPage {
+    NotFoundPage { cb: state.cb }
 }
 
 async fn nocache(request: Request, next: Next) -> Response {
-    static CACHE_CONTROL_VALUE: HeaderValue = HeaderValue::from_static("no-store");
+    static CACHE_CONTROL_PRIVATE: HeaderValue = HeaderValue::from_static("no-store, private");
 
     let mut response = next.run(request).await;
     response
         .headers_mut()
-        .insert(CACHE_CONTROL, CACHE_CONTROL_VALUE.clone());
+        .insert(CACHE_CONTROL, CACHE_CONTROL_PRIVATE.clone());
     response
 }
 
@@ -146,10 +145,22 @@ async fn nocors(req: Request, next: Next) -> Response {
     resp
 }
 
+async fn infinicache(request: Request, next: Next) -> Response {
+    static CACHE_CONTROL_1_YEAR: HeaderValue =
+        HeaderValue::from_static("immutable, public, max-age=3153600");
+
+    let mut response = next.run(request).await;
+    response
+        .headers_mut()
+        .insert(CACHE_CONTROL, CACHE_CONTROL_1_YEAR.clone());
+    response
+}
+
 #[derive(Clone)]
 pub struct AppState {
     header: Option<Arc<HeaderName>>,
     root_dns_name: Arc<str>,
+    cb: Arc<BustDir>,
 }
 
 impl AppState {
@@ -162,9 +173,12 @@ impl AppState {
         let root_dns_name: Arc<str> = std::env::var("ROOT_DNS_NAME")
             .expect("No ROOT_DNS_NAME in env")
             .into();
+        let bust = BustDir::new("assets").expect("Failed to create cache-bustin hashes");
+        let cb = Arc::new(bust);
         Self {
             header: client_ip.map(|v| Arc::new(HeaderName::try_from(v).unwrap())),
             root_dns_name,
+            cb,
         }
     }
 }
