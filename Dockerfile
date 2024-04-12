@@ -8,7 +8,10 @@ RUN cargo build --release
 
 FROM alpine
 
+WORKDIR /giveip
+
 COPY --from=builder /build/target/release/giveip /usr/bin/giveip
+COPY /assets/ /giveip/assets/
 
 EXPOSE 8080
 
