@@ -1,3 +1,9 @@
+FROM ghcr.io/randomairborne/asset-squisher:latest AS compressor
+
+COPY /assets/ /uncompressed/
+
+RUN asset-squisher /uncompressed/ /assets/
+
 FROM rust:alpine AS builder
 
 WORKDIR /build
@@ -11,7 +17,7 @@ FROM alpine
 WORKDIR /giveip
 
 COPY --from=builder /build/target/release/giveip /usr/bin/giveip
-COPY /assets/ /giveip/assets/
+COPY --from=compressor /assets/ /giveip/assets/
 
 EXPOSE 8080
 
