@@ -10,7 +10,7 @@ if (ip4txt.hidden) {
   fetch(v4_endpoint)
     .then((req) => req.text())
     .then((resp) => {
-      ip4.innerText = resp;
+      ip4.innerText = resp.trim();
       ip4txt.hidden = false;
       document.getElementById("title").innerText = `Your IP is ${resp}`;
     })
@@ -22,7 +22,7 @@ if (ip6txt.hidden) {
   fetch(v6_endpoint)
     .then((req) => req.text())
     .then((resp) => {
-      ip6.innerText = resp;
+      ip6.innerText = resp.trim();
       ip6txt.hidden = false;
     })
     .catch((failed) => {
