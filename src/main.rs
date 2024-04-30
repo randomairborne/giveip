@@ -1,5 +1,4 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
-#![allow(clippy::useless_let_if_seq)]
 
 use std::{
     fmt::{Display, Formatter},
