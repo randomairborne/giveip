@@ -21,4 +21,4 @@ COPY --from=compressor /assets/ /giveip/assets/
 
 EXPOSE 8080
 
-ENTRYPOINT "/usr/bin/giveip"
+CMD ["/usr/bin/giveip"]
