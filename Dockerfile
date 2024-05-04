@@ -12,9 +12,9 @@ COPY . .
 RUN apk add musl-dev
 RUN cargo build --release
 
-FROM alpine
+FROM alpine:latest
 
-WORKDIR /giveip
+WORKDIR /
 
 COPY --from=builder /build/target/release/giveip /usr/bin/giveip
 COPY --from=compressor /assets/ /giveip/assets/
