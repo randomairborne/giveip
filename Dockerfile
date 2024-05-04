@@ -14,7 +14,7 @@ RUN cargo build --release
 
 FROM alpine:latest
 
-WORKDIR /
+WORKDIR /giveip
 
 COPY --from=builder /build/target/release/giveip /usr/bin/giveip
 COPY --from=compressor /assets/ /giveip/assets/
