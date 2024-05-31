@@ -24,11 +24,21 @@ use axum::{
 use bustdir::BustDir;
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
-use tower_http::services::ServeDir;
+use tower_http::{
+    services::ServeDir,
+    set_header::{SetResponseHeader, SetResponseHeaderLayer},
+};
 
 mod filters {
     pub use bustdir::askama::bust_dir;
 }
+
+static ROBOTS_NAME: HeaderName = HeaderName::from_static("x-robots-tag");
+static ROBOTS_VALUE: HeaderValue = HeaderValue::from_static("noindex");
+static CORS_STAR: HeaderValue = HeaderValue::from_static("*");
+static CACHE_CONTROL_PRIVATE: HeaderValue = HeaderValue::from_static("no-store, private");
+static CACHE_CONTROL_1_YEAR: HeaderValue =
+    HeaderValue::from_static("immutable, public, max-age=3153600");
 
 #[tokio::main]
 async fn main() {
@@ -37,23 +47,27 @@ async fn main() {
 
     let state = AppState::new();
 
+    let noindex = SetResponseHeaderLayer::overriding(ROBOTS_NAME.clone(), ROBOTS_VALUE.clone());
+    let permissive_cors =
+        SetResponseHeaderLayer::overriding(ACCESS_CONTROL_ALLOW_ORIGIN.clone(), CORS_STAR.clone());
+    let no_cache =
+        SetResponseHeaderLayer::overriding(CACHE_CONTROL.clone(), CACHE_CONTROL_PRIVATE.clone());
+    let infinicache =
+        SetResponseHeaderLayer::overriding(CACHE_CONTROL.clone(), CACHE_CONTROL_1_YEAR.clone());
+
     let serve_dir = ServeDir::new("assets").fallback(not_found.with_state(state.clone()));
     let assets = ServiceBuilder::new()
-        .layer(axum::middleware::from_fn(noindex))
-        .layer(axum::middleware::from_fn(infinicache))
+        .layer(noindex.clone())
+        .layer(infinicache)
         .service(serve_dir);
 
     let app = Router::new()
         .route("/", get(home))
         .route(
             "/raw",
-            any(raw).layer(
-                ServiceBuilder::new()
-                    .layer(axum::middleware::from_fn(noindex))
-                    .layer(axum::middleware::from_fn(nocors)),
-            ),
+            any(raw).layer(ServiceBuilder::new().layer(noindex).layer(permissive_cors)),
         )
-        .layer(axum::middleware::from_fn(nocache))
+        .layer(no_cache)
         .fallback_service(assets)
         .with_state(state.clone());
 
@@ -112,47 +126,6 @@ async fn raw(IpAddress(ip): IpAddress) -> Result<String, Error> {
 #[allow(clippy::unused_async)]
 async fn not_found(State(state): State<AppState>) -> NotFoundPage {
     NotFoundPage { cb: state.cb }
-}
-
-async fn nocache(request: Request, next: Next) -> Response {
-    static CACHE_CONTROL_PRIVATE: HeaderValue = HeaderValue::from_static("no-store, private");
-
-    let mut response = next.run(request).await;
-    response
-        .headers_mut()
-        .insert(CACHE_CONTROL, CACHE_CONTROL_PRIVATE.clone());
-    response
-}
-
-async fn noindex(req: Request, next: Next) -> Response {
-    static ROBOTS_NAME: HeaderName = HeaderName::from_static("x-robots-tag");
-    static ROBOTS_VALUE: HeaderValue = HeaderValue::from_static("noindex");
-
-    let mut resp = next.run(req).await;
-    resp.headers_mut()
-        .insert(ROBOTS_NAME.clone(), ROBOTS_VALUE.clone());
-    resp
-}
-
-async fn nocors(req: Request, next: Next) -> Response {
-    static CORS_STAR: HeaderValue = HeaderValue::from_static("*");
-
-    let mut resp = next.run(req).await;
-
-    resp.headers_mut()
-        .insert(ACCESS_CONTROL_ALLOW_ORIGIN, CORS_STAR.clone());
-    resp
-}
-
-async fn infinicache(request: Request, next: Next) -> Response {
-    static CACHE_CONTROL_1_YEAR: HeaderValue =
-        HeaderValue::from_static("immutable, public, max-age=3153600");
-
-    let mut response = next.run(request).await;
-    response
-        .headers_mut()
-        .insert(CACHE_CONTROL, CACHE_CONTROL_1_YEAR.clone());
-    response
 }
 
 #[derive(Clone)]
