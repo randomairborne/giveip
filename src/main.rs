@@ -237,7 +237,7 @@ async fn nonce_layer(State(state): State<AppState>, mut req: Request, next: Next
     let base_dns_name = state.root_dns_name;
     let csp_str = format!(
         "default-src 'none'; object-src 'none'; img-src 'self'; \
-        connect-src v4.{base_dns_name} v6.{base_dns_name}; \
+        connect-src v4.{base_dns_name} v6.{base_dns_name} cloudflareinsights.com; \
         style-src 'nonce-{nonce_string}'; \
         script-src 'nonce-{nonce_string}' 'unsafe-inline' 'strict-dynamic' http: https:; \
         base-uri 'none';"
