@@ -239,7 +239,7 @@ async fn nonce_layer(State(state): State<AppState>, mut req: Request, next: Next
         "default-src 'none'; object-src 'none'; img-src 'self'; \
         connect-src v4.{base_dns_name} v6.{base_dns_name}; \
         style-src 'nonce-{nonce_string}'; \
-        script-src 'nonce-{nonce_string}' 'unsafe-inline' 'strict-dynamic'; \
+        script-src 'nonce-{nonce_string}' 'unsafe-inline' 'strict-dynamic' http: https:; \
         base-uri 'none';"
     );
     match HeaderValue::from_str(&csp_str) {
