@@ -23,7 +23,7 @@ jobs:
       - name: Install prettier
         run: npm install
 
-      - name: Check Rust formatting
+      - name: Check Askama formatting
         run: npm run prettier-check
 
       - name: Check build
