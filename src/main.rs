@@ -1,7 +1,7 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
 use std::{
-    fmt::{Display, Formatter},
+    fmt::{Debug, Display, Formatter},
     net::{IpAddr, Ipv6Addr, SocketAddr, SocketAddrV6},
     str::FromStr,
     sync::Arc,
@@ -12,7 +12,7 @@ use axum::{
     extract::{ConnectInfo, FromRequestParts, Request, State},
     handler::Handler,
     http::{
-        header::{ACCESS_CONTROL_ALLOW_ORIGIN, CACHE_CONTROL},
+        header::{ACCESS_CONTROL_ALLOW_ORIGIN, CACHE_CONTROL, CONTENT_SECURITY_POLICY},
         request::Parts,
         HeaderName, HeaderValue, StatusCode,
     },
@@ -21,17 +21,10 @@ use axum::{
     routing::{any, get},
     Router,
 };
-use bustdir::BustDir;
+use rand::{distributions::Alphanumeric, Rng};
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
-use tower_http::{
-    services::ServeDir,
-    set_header::{SetResponseHeader, SetResponseHeaderLayer},
-};
-
-mod filters {
-    pub use bustdir::askama::bust_dir;
-}
+use tower_http::{services::ServeDir, set_header::SetResponseHeaderLayer};
 
 static ROBOTS_NAME: HeaderName = HeaderName::from_static("x-robots-tag");
 static ROBOTS_VALUE: HeaderValue = HeaderValue::from_static("noindex");
@@ -69,7 +62,11 @@ async fn main() {
         )
         .layer(no_cache)
         .fallback_service(assets)
-        .with_state(state.clone());
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            nonce_layer,
+        ))
+        .with_state(state);
 
     println!("Listening on http://localhost:{port} and http://{v6_addr} for ip requests");
     let tcp6 = TcpListener::bind(v6_addr).await.unwrap();
@@ -87,30 +84,31 @@ async fn svc(tcp: TcpListener, app: Router) {
 #[template(path = "index.hbs", escape = "html", ext = "html")]
 pub struct IndexPage {
     root_dns_name: Arc<str>,
-    cb: Arc<BustDir>,
     ip: IpAddr,
     proto: String,
+    nonce: Nonce,
 }
 
 #[derive(Template)]
 #[template(path = "404.hbs", escape = "html", ext = "html")]
 pub struct NotFoundPage {
-    cb: Arc<BustDir>,
+    nonce: Nonce,
 }
 
 #[allow(clippy::unused_async)]
 async fn home(
     IpAddress(ip): IpAddress,
     XForwardedProto(proto): XForwardedProto,
+    nonce: Nonce,
     Accept(accept): Accept,
     State(state): State<AppState>,
 ) -> Result<Result<IndexPage, String>, Error> {
     if accept.contains("text/html") {
         let page = IndexPage {
             root_dns_name: state.root_dns_name,
-            cb: state.cb,
             ip,
             proto,
+            nonce,
         };
         Ok(Ok(page))
     } else {
@@ -124,15 +122,14 @@ async fn raw(IpAddress(ip): IpAddress) -> Result<String, Error> {
 }
 
 #[allow(clippy::unused_async)]
-async fn not_found(State(state): State<AppState>) -> NotFoundPage {
-    NotFoundPage { cb: state.cb }
+async fn not_found(nonce: Nonce) -> NotFoundPage {
+    NotFoundPage { nonce }
 }
 
 #[derive(Clone)]
 pub struct AppState {
     header: Option<Arc<HeaderName>>,
     root_dns_name: Arc<str>,
-    cb: Arc<BustDir>,
 }
 
 impl AppState {
@@ -145,12 +142,9 @@ impl AppState {
         let root_dns_name: Arc<str> = std::env::var("ROOT_DNS_NAME")
             .expect("No ROOT_DNS_NAME in env")
             .into();
-        let bust = BustDir::new("assets").expect("Failed to create cache-bustin hashes");
-        let cb = Arc::new(bust);
         Self {
             header: client_ip.map(|v| Arc::new(HeaderName::try_from(v).unwrap())),
             root_dns_name,
-            cb,
         }
     }
 }
@@ -166,7 +160,7 @@ pub struct IpAddress(IpAddr);
 
 impl Display for IpAddress {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+        Display::fmt(&self.0, f)
     }
 }
 
@@ -228,12 +222,65 @@ impl<S> FromRequestParts<S> for Accept {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct Nonce(pub String);
+
+#[axum::async_trait]
+impl<S> FromRequestParts<S> for Nonce {
+    type Rejection = std::convert::Infallible;
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        Ok(parts
+            .extensions
+            .get()
+            .cloned()
+            .unwrap_or_else(|| Self("no-noncense".to_string())))
+    }
+}
+
+impl Display for Nonce {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(&self.0, f)
+    }
+}
+
+async fn nonce_layer(State(state): State<AppState>, mut req: Request, next: Next) -> Response {
+    let nonce_string = random_string(32);
+    req.extensions_mut().insert(Nonce(nonce_string.clone()));
+    let mut resp = next.run(req).await;
+    let base_dns_name = state.root_dns_name;
+    let csp_str = format!(
+        "default-src 'none'; object-src 'none'; img-src 'self'; \
+        connect-src v4.{base_dns_name} v6.{base_dns_name}; \
+        style-src 'nonce-{nonce_string}'; \
+        script-src 'nonce-{nonce_string}' 'unsafe-inline' 'strict-dynamic'; \
+        base-uri 'none';"
+    );
+    match HeaderValue::from_str(&csp_str) {
+        Ok(csp) => {
+            resp.headers_mut().insert(CONTENT_SECURITY_POLICY, csp);
+        }
+        Err(source) => eprintln!("ERROR: {source:?}"),
+    }
+    resp
+}
+
+fn random_string(length: usize) -> String {
+    let rng = rand::thread_rng();
+    rng.sample_iter(Alphanumeric)
+        .take(length)
+        .map(char::from)
+        .collect()
+}
+
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("No header found")]
     NoHeader,
     #[error("Could not extract connection info")]
     ConnectInfo,
+    #[error("Could not get CSP nonce")]
+    NoNonce,
     #[error("Could not convert supplied header to string (this is a configuration issue)")]
     ToStr(#[from] axum::http::header::ToStrError),
     #[error("Could not convert supplied header to IP address (this is a configuration issue)")]
