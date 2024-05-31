@@ -10,7 +10,6 @@ use std::{
 use askama::Template;
 use axum::{
     extract::{ConnectInfo, FromRequestParts, Request, State},
-    handler::Handler,
     http::{
         header::{ACCESS_CONTROL_ALLOW_ORIGIN, CACHE_CONTROL, CONTENT_SECURITY_POLICY},
         request::Parts,
@@ -24,14 +23,12 @@ use axum::{
 use rand::{distributions::Alphanumeric, Rng};
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
-use tower_http::{services::ServeDir, set_header::SetResponseHeaderLayer};
+use tower_http::set_header::SetResponseHeaderLayer;
 
 static ROBOTS_NAME: HeaderName = HeaderName::from_static("x-robots-tag");
 static ROBOTS_VALUE: HeaderValue = HeaderValue::from_static("noindex");
 static CORS_STAR: HeaderValue = HeaderValue::from_static("*");
 static CACHE_CONTROL_PRIVATE: HeaderValue = HeaderValue::from_static("no-store, private");
-static CACHE_CONTROL_1_YEAR: HeaderValue =
-    HeaderValue::from_static("immutable, public, max-age=3153600");
 
 #[tokio::main]
 async fn main() {
@@ -45,14 +42,7 @@ async fn main() {
         SetResponseHeaderLayer::overriding(ACCESS_CONTROL_ALLOW_ORIGIN.clone(), CORS_STAR.clone());
     let no_cache =
         SetResponseHeaderLayer::overriding(CACHE_CONTROL.clone(), CACHE_CONTROL_PRIVATE.clone());
-    let infinicache =
-        SetResponseHeaderLayer::overriding(CACHE_CONTROL.clone(), CACHE_CONTROL_1_YEAR.clone());
-
-    let serve_dir = ServeDir::new("assets").fallback(not_found.with_state(state.clone()));
-    let assets = ServiceBuilder::new()
-        .layer(noindex.clone())
-        .layer(infinicache)
-        .service(serve_dir);
+    let nonce_generator = axum::middleware::from_fn_with_state(state.clone(), nonce_layer);
 
     let app = Router::new()
         .route("/", get(home))
@@ -60,12 +50,8 @@ async fn main() {
             "/raw",
             any(raw).layer(ServiceBuilder::new().layer(noindex).layer(permissive_cors)),
         )
-        .layer(no_cache)
-        .fallback_service(assets)
-        .layer(axum::middleware::from_fn_with_state(
-            state.clone(),
-            nonce_layer,
-        ))
+        .fallback(not_found)
+        .layer(ServiceBuilder::new().layer(no_cache).layer(nonce_generator))
         .with_state(state);
 
     println!("Listening on http://localhost:{port} and http://{v6_addr} for ip requests");
