@@ -50,6 +50,7 @@ async fn main() {
             "/raw",
             any(raw).layer(ServiceBuilder::new().layer(noindex).layer(permissive_cors)),
         )
+        .route("/robots.txt", get(robots))
         .fallback(not_found)
         .layer(ServiceBuilder::new().layer(no_cache).layer(nonce_generator))
         .with_state(state);
@@ -110,6 +111,11 @@ async fn raw(IpAddress(ip): IpAddress) -> Result<String, Error> {
 #[allow(clippy::unused_async)]
 async fn not_found(nonce: Nonce) -> NotFoundPage {
     NotFoundPage { nonce }
+}
+
+#[allow(clippy::unused_async)]
+async fn robots() -> &'static str {
+    concat!("User-Agent: *", "\n", "Allow: /")
 }
 
 #[derive(Clone)]
