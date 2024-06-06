@@ -282,13 +282,13 @@ pub enum Error {
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
         let msg = match self {
-            Error::NoHeader => "No header found",
-            Error::ConnectInfo => "Could not extract connection info",
-            Error::NoNonce => "Could not getc CSP nonce",
-            Error::ToStr(_) => {
+            Self::NoHeader => "No header found",
+            Self::ConnectInfo => "Could not extract connection info",
+            Self::NoNonce => "Could not getc CSP nonce",
+            Self::ToStr(_) => {
                 "Could not convert supplied header to string (this is a configuration issue)"
             }
-            Error::ToAddr(_) => {
+            Self::ToAddr(_) => {
                 "Could not convert supplied header to IP address (this is a configuration issue)"
             }
         };
