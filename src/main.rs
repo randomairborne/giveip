@@ -281,6 +281,17 @@ pub enum Error {
 
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
-        (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()).into_response()
+        let msg = match self {
+            Error::NoHeader => "No header found",
+            Error::ConnectInfo => "Could not extract connection info",
+            Error::NoNonce => "Could not getc CSP nonce",
+            Error::ToStr(_) => {
+                "Could not convert supplied header to string (this is a configuration issue)"
+            }
+            Error::ToAddr(_) => {
+                "Could not convert supplied header to IP address (this is a configuration issue)"
+            }
+        };
+        (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response()
     }
 }
