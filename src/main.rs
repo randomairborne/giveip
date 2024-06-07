@@ -9,21 +9,24 @@ use std::{
 
 use askama::Template;
 use axum::{
-    extract::{ConnectInfo, FromRequestParts, Request, State},
+    extract::{ConnectInfo, FromRequestParts, State},
     http::{
-        header::{ACCESS_CONTROL_ALLOW_ORIGIN, CACHE_CONTROL, CONTENT_SECURITY_POLICY},
+        header::{ACCESS_CONTROL_ALLOW_ORIGIN, CACHE_CONTROL},
         request::Parts,
         HeaderName, HeaderValue, StatusCode,
     },
-    middleware::Next,
     response::{IntoResponse, Response},
     routing::{any, get},
     Router,
 };
-use rand::{distributions::Alphanumeric, Rng};
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::set_header::SetResponseHeaderLayer;
+use tower_sombrero::{
+    csp::CspNonce,
+    headers::{ContentSecurityPolicy, CspSchemeSource, CspSource, XFrameOptions},
+    Sombrero,
+};
 
 static ROBOTS_NAME: HeaderName = HeaderName::from_static("x-robots-tag");
 static ROBOTS_VALUE: HeaderValue = HeaderValue::from_static("noindex");
@@ -42,7 +45,28 @@ async fn main() {
         SetResponseHeaderLayer::overriding(ACCESS_CONTROL_ALLOW_ORIGIN.clone(), CORS_STAR.clone());
     let no_cache =
         SetResponseHeaderLayer::overriding(CACHE_CONTROL.clone(), CACHE_CONTROL_PRIVATE.clone());
-    let nonce_generator = axum::middleware::from_fn_with_state(state.clone(), nonce_layer);
+
+    let csp = ContentSecurityPolicy::new_empty()
+        .default_src([CspSource::None])
+        .base_uri([CspSource::None])
+        .img_src([CspSource::SelfOrigin])
+        .style_src([CspSource::Nonce])
+        .connect_src([
+            CspSource::Host(format!("v4.{}", state.root_dns_name)),
+            CspSource::Host(format!("v6.{}", state.root_dns_name)),
+            CspSource::Host("cloudflareinsights.com".to_string()),
+        ])
+        .script_src([
+            CspSource::Nonce,
+            CspSource::UnsafeInline,
+            CspSource::StrictDynamic,
+            CspSource::Scheme(CspSchemeSource::Https),
+            CspSource::Scheme(CspSchemeSource::Https),
+        ]);
+    let sombrero = Sombrero::default()
+        .content_security_policy(csp)
+        .x_frame_options(XFrameOptions::Deny)
+        .remove_strict_transport_security();
 
     let app = Router::new()
         .route("/", get(home))
@@ -52,7 +76,7 @@ async fn main() {
         )
         .route("/robots.txt", get(robots))
         .fallback(not_found)
-        .layer(ServiceBuilder::new().layer(no_cache).layer(nonce_generator))
+        .layer(ServiceBuilder::new().layer(no_cache).layer(sombrero))
         .with_state(state);
 
     println!("Listening on http://localhost:{port} and http://{v6_addr} for ip requests");
@@ -73,20 +97,20 @@ pub struct IndexPage {
     root_dns_name: Arc<str>,
     ip: IpAddr,
     proto: String,
-    nonce: Nonce,
+    nonce: String,
 }
 
 #[derive(Template)]
 #[template(path = "404.hbs", escape = "html", ext = "html")]
 pub struct NotFoundPage {
-    nonce: Nonce,
+    nonce: String,
 }
 
 #[allow(clippy::unused_async)]
 async fn home(
     IpAddress(ip): IpAddress,
     XForwardedProto(proto): XForwardedProto,
-    nonce: Nonce,
+    CspNonce(nonce): CspNonce,
     Accept(accept): Accept,
     State(state): State<AppState>,
 ) -> Result<Result<IndexPage, String>, Error> {
@@ -109,7 +133,7 @@ async fn raw(IpAddress(ip): IpAddress) -> Result<String, Error> {
 }
 
 #[allow(clippy::unused_async)]
-async fn not_found(nonce: Nonce) -> NotFoundPage {
+async fn not_found(nonce: String) -> NotFoundPage {
     NotFoundPage { nonce }
 }
 
@@ -214,57 +238,6 @@ impl<S> FromRequestParts<S> for Accept {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct Nonce(pub String);
-
-#[axum::async_trait]
-impl<S> FromRequestParts<S> for Nonce {
-    type Rejection = std::convert::Infallible;
-
-    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        Ok(parts
-            .extensions
-            .get()
-            .cloned()
-            .unwrap_or_else(|| Self("no-noncense".to_string())))
-    }
-}
-
-impl Display for Nonce {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        Display::fmt(&self.0, f)
-    }
-}
-
-async fn nonce_layer(State(state): State<AppState>, mut req: Request, next: Next) -> Response {
-    let nonce_string = random_string(32);
-    req.extensions_mut().insert(Nonce(nonce_string.clone()));
-    let mut resp = next.run(req).await;
-    let base_dns_name = state.root_dns_name;
-    let csp_str = format!(
-        "default-src 'none'; object-src 'none'; img-src 'self'; \
-        connect-src v4.{base_dns_name} v6.{base_dns_name} cloudflareinsights.com; \
-        style-src 'nonce-{nonce_string}'; \
-        script-src 'nonce-{nonce_string}' 'unsafe-inline' 'strict-dynamic' http: https:; \
-        base-uri 'none';"
-    );
-    match HeaderValue::from_str(&csp_str) {
-        Ok(csp) => {
-            resp.headers_mut().insert(CONTENT_SECURITY_POLICY, csp);
-        }
-        Err(source) => eprintln!("ERROR: {source:?}"),
-    }
-    resp
-}
-
-fn random_string(length: usize) -> String {
-    let rng = rand::thread_rng();
-    rng.sample_iter(Alphanumeric)
-        .take(length)
-        .map(char::from)
-        .collect()
-}
-
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("No header found")]
@@ -272,7 +245,7 @@ pub enum Error {
     #[error("Could not extract connection info")]
     ConnectInfo,
     #[error("Could not get CSP nonce")]
-    NoNonce,
+    NoNonce(#[from] tower_sombrero::Error),
     #[error("Could not convert supplied header to string (this is a configuration issue)")]
     ToStr(#[from] axum::http::header::ToStrError),
     #[error("Could not convert supplied header to IP address (this is a configuration issue)")]
@@ -284,7 +257,7 @@ impl IntoResponse for Error {
         let msg = match self {
             Self::NoHeader => "No header found",
             Self::ConnectInfo => "Could not extract connection info",
-            Self::NoNonce => "Could not getc CSP nonce",
+            Self::NoNonce(_) => "Could not get CSP nonce",
             Self::ToStr(_) => {
                 "Could not convert supplied header to string (this is a configuration issue)"
             }
