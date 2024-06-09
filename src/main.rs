@@ -96,6 +96,7 @@ async fn svc(tcp: TcpListener, app: Router) {
 pub struct IndexPage {
     root_dns_name: Arc<str>,
     ip: IpAddr,
+    description: Arc<str>,
     proto: String,
     nonce: String,
 }
@@ -118,6 +119,7 @@ async fn home(
         let page = IndexPage {
             root_dns_name: state.root_dns_name,
             ip,
+            description: state.description,
             proto,
             nonce,
         };
@@ -146,9 +148,12 @@ async fn robots() -> &'static str {
 pub struct AppState {
     header: Option<Arc<HeaderName>>,
     root_dns_name: Arc<str>,
+    description: Arc<str>,
 }
 
 impl AppState {
+    const DEFAULT_DESCRIPTION: &'static str = "IP address return API and site";
+
     #[must_use]
     /// # Panics
     /// This function can panic when its hardcoded values are invalid
@@ -158,9 +163,13 @@ impl AppState {
         let root_dns_name: Arc<str> = std::env::var("ROOT_DNS_NAME")
             .expect("No ROOT_DNS_NAME in env")
             .into();
+        let description: Arc<str> = std::env::var("DESCRIPTION")
+            .unwrap_or_else(|_| Self::DEFAULT_DESCRIPTION.to_string())
+            .into();
         Self {
             header: client_ip.map(|v| Arc::new(HeaderName::try_from(v).unwrap())),
             root_dns_name,
+            description,
         }
     }
 }
