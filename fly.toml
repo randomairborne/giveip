@@ -14,6 +14,7 @@ auto_rollback = true
 [env]
 CLIENT_IP_HEADER = "Fly-Client-IP"
 ROOT_DNS_NAME = "giveip.io"
+DESCRIPTION = "A simple, fast website to return your IPv4 and IPv6 addresses. No logs are kept. Free and open to all."
 
 [build]
 image = "ghcr.io/randomairborne/giveip:latest"
