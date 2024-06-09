@@ -46,23 +46,23 @@
     <div class="stack">
       {%- match ip -%}
         {%- when IpAddr::V4 with (ipv4) -%}
-        <div>Your public IPv4 is: <code id="ip-4">{{ ipv4 }}</code></div>
-        <div id="ip6-txt" hidden>
-          Your public IPv6 is: <code id="ip-6">(fetching)</code>
+        <div>Your public IPv4 is: <code>{{ ipv4 }}</code></div>
+        <div id="ip6-container" hidden>
+          Your public IPv6 is: <code id="ip6-text">(fetching)</code>
         </div>
         {%- when IpAddr::V6 with (ipv6) -%}
-        <div id="ip4-txt" hidden>
-          Your public IPv4 is: <code id="ip-4">(fetching)</code>
+        <div id="ip4-container" hidden>
+          Your public IPv4 is: <code id="ip4-text">(fetching)</code>
         </div>
-        <div>Your public IPv6 is: <code id="ip-6">{{ ipv6 }}</code></div>
+        <div>Your public IPv6 is: <code>{{ ipv6 }}</code></div>
       {%- endmatch -%}
     </div>
     {%- match ip -%}
       {%- when IpAddr::V4 with (ipv4) -%}
       <script nonce="{{ nonce }}">
         const v6_endpoint = `{{ proto }}://v6.{{ root_dns_name }}/raw`;
-        const ip6 = document.getElementById("ip-6");
-        const ip6txt = document.getElementById("ip6-txt");
+        const ip6 = document.getElementById("ip6-text");
+        const ip6txt = document.getElementById("ip6-container");
         fetch(v6_endpoint)
           .then((req) => req.text())
           .then((resp) => {
@@ -76,8 +76,8 @@
       {%- when IpAddr::V6 with (ipv6) -%}
       <script nonce="{{ nonce }}">
         const v4_endpoint = `{{ proto }}://v4.{{ root_dns_name }}/raw`;
-        const ip4txt = document.getElementById("ip4-txt");
-        const ip4 = document.getElementById("ip-4");
+        const ip4txt = document.getElementById("ip4-container");
+        const ip4 = document.getElementById("ip4-text");
         fetch(v4_endpoint)
           .then((req) => req.text())
           .then((resp) => {
