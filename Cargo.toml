@@ -15,7 +15,7 @@ askama = { version = "0.12", features = ["with-axum"], default-features = false 
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 tower-http = { version = "0.5", features = ["set-header"] }
 askama_axum = { version = "0.4", default-features = false }
-tower-sombrero = { version = "0.0.3", features = ["axum"] }
+tower-sombrero = { version = "0.0.4", features = ["axum"] }
 thiserror = "1"
 tower = "0.4"
 vss = "0.1"
