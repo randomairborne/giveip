@@ -45,6 +45,9 @@ jobs:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
+      - name: Check out code into the proper directory
+        uses: actions/checkout@v4
+
       - name: Set up flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
 
