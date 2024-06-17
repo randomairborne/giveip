@@ -75,6 +75,7 @@ async fn main() {
             any(raw).layer(ServiceBuilder::new().layer(noindex).layer(permissive_cors)),
         )
         .route("/robots.txt", get(robots))
+        .route("/humans.txt", get(humans))
         .fallback(not_found)
         .layer(ServiceBuilder::new().layer(no_cache).layer(sombrero))
         .with_state(state);
@@ -141,7 +142,12 @@ async fn not_found(nonce: String) -> NotFoundPage {
 
 #[allow(clippy::unused_async)]
 async fn robots() -> &'static str {
-    concat!("User-Agent: *", "\n", "Allow: /")
+    include_str!("robots.txt")
+}
+
+#[allow(clippy::unused_async)]
+async fn humans() -> &'static str {
+    include_str!("humans.txt")
 }
 
 #[derive(Clone)]
