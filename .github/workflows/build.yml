@@ -22,9 +22,6 @@ jobs:
       - name: Check out code into the proper directory
         uses: actions/checkout@v4
 
-      - name: Set up flyctl
-        uses: superfly/flyctl-actions/setup-flyctl@master
-
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -44,6 +41,14 @@ jobs:
           tags: ghcr.io/${{ env.REPO }}:latest
           platforms: linux/amd64
 
-      - run: flyctl deploy
+  deploy:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Update containers
+        run: flyctl deploy
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
