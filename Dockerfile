@@ -11,7 +11,7 @@ RUN cargo build --release --target ${LLVMTARGETARCH}-unknown-linux-musl
 
 FROM scratch
 
-COPY --from=builder /build/target/release/giveip /usr/bin/giveip
+COPY --from=builder /build/target/${LLVMTARGETARCH}-unknown-linux-musl/release/giveip /usr/bin/giveip
 EXPOSE 8080
 
 ENTRYPOINT ["/usr/bin/giveip"]
