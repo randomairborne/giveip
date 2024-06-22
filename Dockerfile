@@ -1,10 +1,13 @@
-FROM rust:alpine AS builder
+ARG LLVMTARGETARCH
+FROM --platform=${BUILDPLATFORM} ghcr.io/randomairborne/cross-cargo-${LLVMTARGETARCH}:latest AS builder
+
+ARG LLVMTARGETARCH
 
 WORKDIR /build
+
 COPY . .
 
-RUN apk add musl-dev
-RUN cargo build --release
+RUN cargo build --release --target ${LLVMTARGETARCH}-unknown-linux-musl
 
 FROM scratch
 
