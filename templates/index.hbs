@@ -45,15 +45,15 @@
     <div class="stack">
       {%- match ip -%}
         {%- when IpAddr::V4 with (ipv4) -%}
-        <div>Your public IPv4 is: <code>{{ ipv4 }}</code></div>
-        <div id="ip6-container" hidden>
+        <span>Your public IPv4 is: <code>{{ ipv4 }}</code></span>
+        <span id="ip6-container" hidden>
           Your public IPv6 is: <code id="ip6-text">(fetching)</code>
-        </div>
+        </span>
         {%- when IpAddr::V6 with (ipv6) -%}
-        <div id="ip4-container" hidden>
+        <span id="ip4-container" hidden>
           Your public IPv4 is: <code id="ip4-text">(fetching)</code>
-        </div>
-        <div>Your public IPv6 is: <code>{{ ipv6 }}</code></div>
+        </span>
+        <span>Your public IPv6 is: <code>{{ ipv6 }}</code></span>
       {%- endmatch -%}
     </div>
     {%- match ip -%}
