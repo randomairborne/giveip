@@ -61,7 +61,6 @@ async fn main() {
             CspSource::UnsafeInline,
             CspSource::StrictDynamic,
             CspSource::Scheme(CspSchemeSource::Https),
-            CspSource::Scheme(CspSchemeSource::Https),
         ]);
     let sombrero = Sombrero::default()
         .content_security_policy(csp)
