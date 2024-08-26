@@ -1,93 +1,93 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    {%- match ip -%}
-      {%- when IpAddr::V4 with (_) -%}
-      <link
-        rel="preload"
-        href="{{ proto }}://v6.{{ root_dns_name }}/raw"
-        as="fetch"
-        crossorigin="anonymous"
-        nonce="{{ nonce }}"
-      />
-      {%- when IpAddr::V6 with (_) -%}
-      <link
-        rel="preload"
-        href="{{ proto }}://v4.{{ root_dns_name }}/raw"
-        as="fetch"
-        crossorigin="anonymous"
-        nonce="{{ nonce }}"
-      />
-    {%- endmatch -%}
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="{{ description }}" />
-    <meta property="og:title" content="GiveIP" />
-    <meta property="og:url" content="{{ proto }}://{{ root_dns_name }}/" />
-    <meta property="og:description" content="{{ description }}" />
-    <link rel="canonical" href="https://{{ root_dns_name }}/" />
-    {% include "style.hbs" %}
-    {%- match ip -%}
-      {%- when IpAddr::V4 with (ipv4) -%}
-      <title>Your public IP is {{ ipv4 }}</title>
-      {%- when IpAddr::V6 with (_) -%}
-      <title>What's your IP?</title>
-    {%- endmatch -%}
-  </head>
+<head>
+  <meta charset="UTF-8">
+  {%- match ip -%}
+  {%- when IpAddr::V4 with (_) -%}
+  <link
+    rel="preload"
+    href="{{ proto }}://v6.{{ root_dns_name }}/raw"
+    as="fetch"
+    crossorigin="anonymous"
+    nonce="{{ nonce }}"
+  >
+  {%- when IpAddr::V6 with (_) -%}
+  <link
+    rel="preload"
+    href="{{ proto }}://v4.{{ root_dns_name }}/raw"
+    as="fetch"
+    crossorigin="anonymous"
+    nonce="{{ nonce }}"
+  >
+  {%- endmatch -%}
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{{ description }}">
+  <meta property="og:title" content="GiveIP">
+  <meta property="og:url" content="{{ proto }}://{{ root_dns_name }}/">
+  <meta property="og:description" content="{{ description }}">
+  <link rel="canonical" href="https://{{ root_dns_name }}/">
+  {% include "style.hbs" %}
+  {%- match ip -%}
+  {%- when IpAddr::V4 with (ipv4) -%}
+  <title>Your public IP is {{ ipv4 }}</title>
+  {%- when IpAddr::V6 with (_) -%}
+  <title>What's your IP?</title>
+  {%- endmatch -%}
+</head>
 
-  <body>
-    <script
-      defer
-      src="https://static.cloudflareinsights.com/beacon.min.js"
-      data-cf-beacon='{"token": "872609be4c924b219e5de38a6e0b26a0"}'
-      nonce="{{ nonce }}"
-    ></script>
-    <div class="stack">
-      {%- match ip -%}
-        {%- when IpAddr::V4 with (ipv4) -%}
-        <span>Your public IPv4 is: <code>{{ ipv4 }}</code></span>
-        <span id="ip6-container" hidden>
+<body>
+<script
+  defer
+  src="https://static.cloudflareinsights.com/beacon.min.js"
+  data-cf-beacon='{"token": "872609be4c924b219e5de38a6e0b26a0"}'
+  nonce="{{ nonce }}"
+></script>
+<div class="stack">
+  {%- match ip -%}
+  {%- when IpAddr::V4 with (ipv4) -%}
+  <span>Your public IPv4 is: <code>{{ ipv4 }}</code></span>
+  <span id="ip6-container" hidden>
           Your public IPv6 is: <code id="ip6-text">(fetching)</code>
         </span>
-        {%- when IpAddr::V6 with (ipv6) -%}
-        <span id="ip4-container" hidden>
+  {%- when IpAddr::V6 with (ipv6) -%}
+  <span id="ip4-container" hidden>
           Your public IPv4 is: <code id="ip4-text">(fetching)</code>
         </span>
-        <span>Your public IPv6 is: <code>{{ ipv6 }}</code></span>
-      {%- endmatch -%}
-    </div>
-    {%- match ip -%}
-      {%- when IpAddr::V4 with (ipv4) -%}
-      <script nonce="{{ nonce }}">
-        const v6_endpoint = `{{ proto }}://v6.{{ root_dns_name }}/raw`;
-        const ip6 = document.getElementById("ip6-text");
-        const ip6txt = document.getElementById("ip6-container");
-        fetch(v6_endpoint)
-          .then((req) => req.text())
-          .then((resp) => {
-            ip6.innerText = resp.trim();
-            ip6txt.hidden = false;
-          })
-          .catch((failed) => {
-            console.log("Request failed:" + failed);
-          });
-      </script>
-      {%- when IpAddr::V6 with (ipv6) -%}
-      <script nonce="{{ nonce }}">
-        const v4_endpoint = `{{ proto }}://v4.{{ root_dns_name }}/raw`;
-        const ip4txt = document.getElementById("ip4-container");
-        const ip4 = document.getElementById("ip4-text");
-        fetch(v4_endpoint)
-          .then((req) => req.text())
-          .then((resp) => {
-            ip4.innerText = resp.trim();
-            ip4txt.hidden = false;
-            document.title = `Your IP is ${resp}`;
-          })
-          .catch((failed) => {
-            console.log("Request failed:" + failed);
-          });
-      </script>
-    {%- endmatch -%}
-  </body>
+  <span>Your public IPv6 is: <code>{{ ipv6 }}</code></span>
+  {%- endmatch -%}
+</div>
+{%- match ip -%}
+{%- when IpAddr::V4 with (ipv4) -%}
+<script nonce="{{ nonce }}">
+  const v6_endpoint = `{{ proto }}://v6.{{ root_dns_name }}/raw`;
+  const ip6 = document.getElementById("ip6-text");
+  const ip6txt = document.getElementById("ip6-container");
+  fetch(v6_endpoint)
+    .then((req) => req.text())
+    .then((resp) => {
+      ip6.innerText = resp.trim();
+      ip6txt.hidden = false;
+    })
+    .catch((failed) => {
+      console.log("Request failed:" + failed);
+    });
+</script>
+{%- when IpAddr::V6 with (ipv6) -%}
+<script nonce="{{ nonce }}">
+  const v4_endpoint = `{{ proto }}://v4.{{ root_dns_name }}/raw`;
+  const ip4txt = document.getElementById("ip4-container");
+  const ip4 = document.getElementById("ip4-text");
+  fetch(v4_endpoint)
+    .then((req) => req.text())
+    .then((resp) => {
+      ip4.innerText = resp.trim();
+      ip4txt.hidden = false;
+      document.title = `Your IP is ${resp}`;
+    })
+    .catch((failed) => {
+      console.log("Request failed:" + failed);
+    });
+</script>
+{%- endmatch -%}
+</body>
 </html>
