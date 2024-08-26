@@ -115,7 +115,7 @@ async fn home(
     CspNonce(nonce): CspNonce,
     Accept(accept): Accept,
     State(state): State<AppState>,
-) -> Result<Result<IndexPage, String>, Error> {
+) -> Result<Either<IndexPage, String>, Error> {
     if accept.contains("text/html") {
         let page = IndexPage {
             root_dns_name: state.root_dns_name,
@@ -124,9 +124,9 @@ async fn home(
             proto,
             nonce,
         };
-        Ok(Ok(page))
+        Ok(Either::A(page))
     } else {
-        Ok(Err(format!("{ip}\n")))
+        Ok(Either::B(format!("{ip}\n")))
     }
 }
 
@@ -250,6 +250,21 @@ impl<S> FromRequestParts<S> for Accept {
             || Ok(Self(String::new())),
             |v| Ok(Self(v.to_str().unwrap_or("").to_string())),
         )
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum Either<A, B> {
+    A(A),
+    B(B),
+}
+
+impl<A: IntoResponse, B: IntoResponse> IntoResponse for Either<A, B> {
+    fn into_response(self) -> Response {
+        match self {
+            Self::A(a) => a.into_response(),
+            Self::B(b) => b.into_response(),
+        }
     }
 }
 
