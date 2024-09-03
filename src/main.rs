@@ -146,7 +146,7 @@ async fn robots() -> &'static str {
 
 #[allow(clippy::unused_async)]
 async fn humans() -> &'static str {
-    include_str!("humans.txt")
+    "This site was created by valkyrie_pilot. Thank you for checking it out.\n"
 }
 
 #[derive(Clone)]
