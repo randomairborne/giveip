@@ -107,7 +107,6 @@ pub struct NotFoundPage {
     nonce: String,
 }
 
-#[allow(clippy::unused_async)]
 async fn home(
     IpAddress(ip): IpAddress,
     XForwardedProto(proto): XForwardedProto,
@@ -129,22 +128,18 @@ async fn home(
     }
 }
 
-#[allow(clippy::unused_async)]
 async fn raw(IpAddress(ip): IpAddress) -> Result<String, Error> {
     Ok(format!("{ip}\n"))
 }
 
-#[allow(clippy::unused_async)]
 async fn not_found(nonce: String) -> NotFoundPage {
     NotFoundPage { nonce }
 }
 
-#[allow(clippy::unused_async)]
 async fn robots() -> &'static str {
     include_str!("robots.txt")
 }
 
-#[allow(clippy::unused_async)]
 async fn humans() -> &'static str {
     "This site was created by valkyrie_pilot. Thank you for checking it out.\n"
 }
