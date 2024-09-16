@@ -137,7 +137,8 @@ async fn not_found(nonce: String) -> NotFoundPage {
 }
 
 async fn robots() -> &'static str {
-    include_str!("robots.txt")
+    "User-Agent: *\
+     Allow: /"
 }
 
 async fn humans() -> &'static str {
