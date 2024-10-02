@@ -27,7 +27,7 @@
     <meta property="og:description" content="{{ description }}" />
     <link rel="canonical" href="https://{{ root_dns_name }}/" />
     {# prettier-ignore-start #}
-    <style nonce="{{ nonce }}">{% include "style.hbs" %}</style>
+    <style nonce="{{ nonce }}">{% include "style.css" %}</style>
     {# prettier-ignore-end #}
     {%- match ip -%}
       {%- when IpAddr::V4 with (ipv4) -%}
