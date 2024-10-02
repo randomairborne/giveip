@@ -9,7 +9,9 @@
       content="How did we get here? This website only has a root page."
     />
     <title>404 not found</title>
-    {% include "style.hbs" %}
+    {# prettier-ignore-start #}
+    <style nonce="{{ nonce }}">{% include "style.hbs" %}</style>
+    {# prettier-ignore-end #}
   </head>
 
   <body>

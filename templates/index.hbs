@@ -26,7 +26,9 @@
     <meta property="og:url" content="{{ proto }}://{{ root_dns_name }}/" />
     <meta property="og:description" content="{{ description }}" />
     <link rel="canonical" href="https://{{ root_dns_name }}/" />
-    {% include "style.hbs" %}
+    {# prettier-ignore-start #}
+    <style nonce="{{ nonce }}">{% include "style.hbs" %}</style>
+    {# prettier-ignore-end #}
     {%- match ip -%}
       {%- when IpAddr::V4 with (ipv4) -%}
       <title>Your public IP is {{ ipv4 }}</title>
