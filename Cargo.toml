@@ -16,7 +16,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 tower-http = { version = "0.5", features = ["set-header"] }
 askama_axum = { version = "0.4", default-features = false }
 tower-sombrero = { version = "0.0.4", features = ["axum"] }
-thiserror = "1"
+thiserror = "2"
 tower = "0.4"
 vss = "0.1"
 
