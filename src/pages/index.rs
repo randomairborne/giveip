@@ -44,12 +44,14 @@ pub fn index(page: &IndexPage) -> Markup {
                     @match page.ip {
                         IpAddr::V4(v4) => {
                             span { "Your public IPv4 is " code { (v4) } }
-                            span #unfilled-ip-container {
+                            span #unfilled-ip-container hidden {
                                 "Your public IPv6 is " code #unfilled-ip-code { "(fetching)" }
                             }
                         }
                         IpAddr::V6(v6) => {
-                            span #unfilled-ip-container { "Your public IPv4 is " code #unfilled-ip-code { "(fetching)" } }
+                            span #unfilled-ip-container hidden {
+                              "Your public IPv4 is " code #unfilled-ip-code { "(fetching)" }
+                            }
                             span {
                                 "Your public IPv6 is " code { (v6) }
                             }
