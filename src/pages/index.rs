@@ -5,13 +5,13 @@ use maud::{html, Markup, PreEscaped, DOCTYPE};
 use crate::IndexPage;
 
 pub fn index(page: &IndexPage) -> Markup {
-    let preload_dns_ext = match page.ip {
-        IpAddr::V4(_) => "v4",
-        IpAddr::V6(_) => "v6",
+    let raw_opposite_dns_ext = match page.ip {
+        IpAddr::V4(_) => "v6",
+        IpAddr::V6(_) => "v4",
     };
     let raw_opposite_endpoint = format!(
         "{}://{}.{}/raw",
-        page.proto, preload_dns_ext, page.root_dns_name
+        page.proto, raw_opposite_dns_ext, page.root_dns_name
     );
     let current_url = format!("{}://{}/", page.proto, page.root_dns_name);
     let canonical = format!("https://{}", page.root_dns_name);
