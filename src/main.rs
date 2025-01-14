@@ -7,7 +7,6 @@ use std::{
     sync::Arc,
 };
 
-use askama::Template;
 use axum::{
     extract::{ConnectInfo, FromRequestParts, State},
     http::{
@@ -15,7 +14,7 @@ use axum::{
         request::Parts,
         HeaderName, HeaderValue, StatusCode,
     },
-    response::{IntoResponse, Response},
+    response::{Html, IntoResponse, Response},
     routing::{any, get},
     Router,
 };
@@ -27,6 +26,8 @@ use tower_sombrero::{
     headers::{ContentSecurityPolicy, CspSchemeSource, CspSource, XFrameOptions},
     Sombrero,
 };
+
+mod pages;
 
 static ROBOTS_NAME: HeaderName = HeaderName::from_static("x-robots-tag");
 static ROBOTS_VALUE: HeaderValue = HeaderValue::from_static("noindex");
@@ -75,7 +76,7 @@ async fn main() {
         )
         .route("/robots.txt", get(robots))
         .route("/humans.txt", get(humans))
-        .fallback(not_found)
+        .fallback(pages::not_found)
         .layer(ServiceBuilder::new().layer(no_cache).layer(sombrero))
         .with_state(state);
 
@@ -91,19 +92,11 @@ async fn svc(tcp: TcpListener, app: Router) {
         .unwrap();
 }
 
-#[derive(Template)]
-#[template(path = "index.hbs", escape = "html", ext = "html")]
 pub struct IndexPage {
     root_dns_name: Arc<str>,
     ip: IpAddr,
     description: Arc<str>,
     proto: String,
-    nonce: String,
-}
-
-#[derive(Template)]
-#[template(path = "404.hbs", escape = "html", ext = "html")]
-pub struct NotFoundPage {
     nonce: String,
 }
 
@@ -113,7 +106,7 @@ async fn home(
     CspNonce(nonce): CspNonce,
     Accept(accept): Accept,
     State(state): State<AppState>,
-) -> Result<Either<IndexPage, String>, Error> {
+) -> Result<Either<Html<String>, String>, Error> {
     if accept.contains("text/html") {
         let page = IndexPage {
             root_dns_name: state.root_dns_name,
@@ -122,7 +115,7 @@ async fn home(
             proto,
             nonce,
         };
-        Ok(Either::A(page))
+        Ok(Either::A(Html(pages::index(&page).into_string())))
     } else {
         Ok(Either::B(format!("{ip}\n")))
     }
@@ -130,10 +123,6 @@ async fn home(
 
 async fn raw(IpAddress(ip): IpAddress) -> Result<String, Error> {
     Ok(format!("{ip}\n"))
-}
-
-async fn not_found(nonce: String) -> NotFoundPage {
-    NotFoundPage { nonce }
 }
 
 async fn robots() -> &'static str {
@@ -190,7 +179,6 @@ impl Display for IpAddress {
     }
 }
 
-#[axum::async_trait]
 impl FromRequestParts<AppState> for IpAddress {
     type Rejection = Error;
 
@@ -217,8 +205,7 @@ impl FromRequestParts<AppState> for IpAddress {
 #[derive(Clone, Debug)]
 pub struct XForwardedProto(pub String);
 
-#[axum::async_trait]
-impl<S> FromRequestParts<S> for XForwardedProto {
+impl<S: Sync> FromRequestParts<S> for XForwardedProto {
     type Rejection = Error;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
@@ -236,8 +223,7 @@ impl<S> FromRequestParts<S> for XForwardedProto {
 #[derive(Clone, Debug)]
 pub struct Accept(String);
 
-#[axum::async_trait]
-impl<S> FromRequestParts<S> for Accept {
+impl<S: Sync> FromRequestParts<S> for Accept {
     type Rejection = Error;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
@@ -279,17 +265,6 @@ pub enum Error {
 
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
-        let msg = match self {
-            Self::NoHeader => "No header found",
-            Self::ConnectInfo => "Could not extract connection info",
-            Self::NoNonce(_) => "Could not get CSP nonce",
-            Self::ToStr(_) => {
-                "Could not convert supplied header to string (this is a configuration issue)"
-            }
-            Self::ToAddr(_) => {
-                "Could not convert supplied header to IP address (this is a configuration issue)"
-            }
-        };
-        (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response()
+        (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()).into_response()
     }
 }
