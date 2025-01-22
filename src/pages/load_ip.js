@@ -11,5 +11,5 @@ fetch(config.dataset.endpoint)
     }
   })
   .catch((failed) => {
-    console.log("Request failed:" + failed);
+    console.log("Request failed: " + failed);
   });
