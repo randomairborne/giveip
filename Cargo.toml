@@ -12,11 +12,11 @@ description = "A simple hyper http server to echo back IP addresses"
 [dependencies]
 axum = { version = "0.8", features = ["tokio", "http1", "http2", "macros"], default-features = false }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
-tower-http = { version = "0.5", features = ["set-header"] }
+tower-http = { version = "0.6", features = ["set-header"] }
 tower-sombrero = { version = "0.1", features = ["axum"] }
 maud = { version = "0.26", features = ["axum"] }
 thiserror = "2"
-tower = "0.4"
+tower = "0.5"
 vss = "0.1"
 
 [profile.release]
