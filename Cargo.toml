@@ -2,12 +2,12 @@
 name = "giveip"
 authors = ["0/0 <zero@imaskeleton.me>", "valkyrie_pilot <valk@randomairborne.dev>"]
 version = "1.0.0"
-edition = "2021"
+edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/randomairborne/giveip"
 keywords = ["ip-address", "webserver", "docker"]
 categories = ["web-programming::http-server"]
-description = "A simple hyper http server to echo back IP addresses"
+description = "A simple http server to echo back IP addresses"
 
 [dependencies]
 axum = { version = "0.8", features = ["tokio", "http1", "http2", "macros"], default-features = false }
