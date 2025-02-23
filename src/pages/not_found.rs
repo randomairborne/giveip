@@ -1,5 +1,5 @@
 use axum::response::Html;
-use maud::{html, PreEscaped, DOCTYPE};
+use maud::{DOCTYPE, PreEscaped, html};
 use tower_sombrero::csp::CspNonce;
 
 pub async fn not_found(CspNonce(nonce): CspNonce) -> Html<String> {

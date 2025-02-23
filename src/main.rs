@@ -8,23 +8,23 @@ use std::{
 };
 
 use axum::{
+    Router,
     extract::{ConnectInfo, FromRequestParts, State},
     http::{
+        HeaderName, HeaderValue, StatusCode,
         header::{ACCESS_CONTROL_ALLOW_ORIGIN, CACHE_CONTROL},
         request::Parts,
-        HeaderName, HeaderValue, StatusCode,
     },
     response::{Html, IntoResponse, Response},
     routing::{any, get},
-    Router,
 };
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::set_header::SetResponseHeaderLayer;
 use tower_sombrero::{
+    Sombrero,
     csp::CspNonce,
     headers::{ContentSecurityPolicy, CspSchemeSource, CspSource, XFrameOptions},
-    Sombrero,
 };
 
 mod pages;

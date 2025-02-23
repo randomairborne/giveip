@@ -1,6 +1,6 @@
 use std::{borrow::Cow, net::IpAddr};
 
-use maud::{html, Markup, PreEscaped, DOCTYPE};
+use maud::{DOCTYPE, Markup, PreEscaped, html};
 
 use crate::IndexPage;
 
