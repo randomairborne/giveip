@@ -29,11 +29,11 @@ pub fn index(page: &IndexPage) -> Markup {
                 meta name="viewport" content="width=device-width, initial-scale=1";
                 meta name="robots" content="noindex";
                 meta name="description" content=(page.description);
-                link rel="preload" href=(raw_opposite_endpoint) as="fetch" crossorigin="anonymous" nonce=(page.nonce);
                 meta name="description" content=(page.description);
                 meta property="og:title" content=(title);
                 meta property="og:url" content=(current_url);
                 meta property="og:description" content=(page.description);
+                link rel="preload" href=(raw_opposite_endpoint) as="fetch" crossorigin="anonymous" nonce=(page.nonce);
                 link rel="canonical" href=(canonical);
                 title { (title) };
                 style nonce=(page.nonce) { (PreEscaped(include_str!("style.css"))) }
