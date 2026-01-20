@@ -69,10 +69,9 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(home))
-        .route(
-            "/raw",
-            any(raw).layer(ServiceBuilder::new().layer(noindex).layer(permissive_cors)),
-        )
+        .route("/json", get(json))
+        .route("/raw", any(raw).layer(noindex))
+        .layer(permissive_cors)
         .route("/robots.txt", get(robots))
         .route("/humans.txt", get(humans))
         .fallback(pages::not_found)
@@ -106,7 +105,7 @@ pub struct JsonIpInfo {
 }
 
 async fn home(
-    IpAddress(ip): IpAddress,
+    ip: IpAddress,
     XForwardedProto(proto): XForwardedProto,
     CspNonce(nonce): CspNonce,
     Accept(accept): Accept,
@@ -115,29 +114,33 @@ async fn home(
     if accept.contains("text/html") {
         let page = IndexPage {
             root_dns_name: state.root_dns_name,
-            ip,
+            ip: ip.0,
             description: state.description,
             proto,
             nonce,
         };
         Ok(Html(pages::index(&page).into_string()).into_response())
     } else if accept.contains("application/json") {
-        let version = match ip {
-            IpAddr::V4(_) => 4,
-            IpAddr::V6(_) => 6,
-        };
-        let info = JsonIpInfo {
-            version,
-            address: ip.to_string(),
-        };
-        Ok(Json(info).into_response())
+        Ok(json(ip).await.into_response())
     } else {
-        Ok(format!("{ip}\n").into_response())
+        Ok(raw(ip).await.into_response())
     }
 }
 
 async fn raw(IpAddress(ip): IpAddress) -> Result<String, Error> {
     Ok(format!("{ip}\n"))
+}
+
+async fn json(IpAddress(ip): IpAddress) -> Result<Json<JsonIpInfo>, Error> {
+    let version = match ip {
+        IpAddr::V4(_) => 4,
+        IpAddr::V6(_) => 6,
+    };
+    let info = JsonIpInfo {
+        version,
+        address: ip.to_string(),
+    };
+    Ok(Json(info))
 }
 
 async fn robots() -> &'static str {
