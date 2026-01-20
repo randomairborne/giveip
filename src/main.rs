@@ -8,7 +8,7 @@ use std::{
 };
 
 use axum::{
-    Router,
+    Json, Router,
     extract::{ConnectInfo, FromRequestParts, State},
     http::{
         HeaderName, HeaderValue, StatusCode,
@@ -55,7 +55,6 @@ async fn main() {
         .connect_src([
             CspSource::Host(format!("v4.{}", state.root_dns_name)),
             CspSource::Host(format!("v6.{}", state.root_dns_name)),
-            CspSource::Host("cloudflareinsights.com".to_string()),
         ])
         .script_src([
             CspSource::Nonce,
@@ -100,13 +99,19 @@ pub struct IndexPage {
     nonce: String,
 }
 
+#[derive(serde::Serialize)]
+pub struct JsonIpInfo {
+    pub version: u8,
+    pub address: String,
+}
+
 async fn home(
     IpAddress(ip): IpAddress,
     XForwardedProto(proto): XForwardedProto,
     CspNonce(nonce): CspNonce,
     Accept(accept): Accept,
     State(state): State<AppState>,
-) -> Result<Either<Html<String>, String>, Error> {
+) -> Result<Response, Error> {
     if accept.contains("text/html") {
         let page = IndexPage {
             root_dns_name: state.root_dns_name,
@@ -115,9 +120,19 @@ async fn home(
             proto,
             nonce,
         };
-        Ok(Either::A(Html(pages::index(&page).into_string())))
+        Ok(Html(pages::index(&page).into_string()).into_response())
+    } else if accept.contains("application/json") {
+        let version = match ip {
+            IpAddr::V4(_) => 4,
+            IpAddr::V6(_) => 6,
+        };
+        let info = JsonIpInfo {
+            version,
+            address: ip.to_string(),
+        };
+        Ok(Json(info).into_response())
     } else {
-        Ok(Either::B(format!("{ip}\n")))
+        Ok(format!("{ip}\n").into_response())
     }
 }
 
@@ -231,21 +246,6 @@ impl<S: Sync> FromRequestParts<S> for Accept {
             || Ok(Self(String::new())),
             |v| Ok(Self(v.to_str().unwrap_or("").to_string())),
         )
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum Either<A, B> {
-    A(A),
-    B(B),
-}
-
-impl<A: IntoResponse, B: IntoResponse> IntoResponse for Either<A, B> {
-    fn into_response(self) -> Response {
-        match self {
-            Self::A(a) => a.into_response(),
-            Self::B(b) => b.into_response(),
-        }
     }
 }
 
