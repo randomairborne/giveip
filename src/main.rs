@@ -24,7 +24,7 @@ use tower_http::set_header::SetResponseHeaderLayer;
 use tower_sombrero::{
     Sombrero,
     csp::CspNonce,
-    headers::{ContentSecurityPolicy, CspSchemeSource, CspSource, XFrameOptions},
+    headers::{ContentSecurityPolicy, CspSchemeSource, CspSource},
 };
 
 mod pages;
@@ -64,7 +64,6 @@ async fn main() {
         ]);
     let sombrero = Sombrero::default()
         .content_security_policy(csp)
-        .x_frame_options(XFrameOptions::Deny)
         .remove_strict_transport_security();
 
     let app = Router::new()
