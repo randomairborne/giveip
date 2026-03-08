@@ -64,6 +64,7 @@ async fn main() {
         ]);
     let sombrero = Sombrero::default()
         .content_security_policy(csp)
+        .remove_x_frame_options()
         .remove_strict_transport_security();
 
     let app = Router::new()
